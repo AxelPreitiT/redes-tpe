@@ -1,8 +1,10 @@
 pipeline {
-    agent any
-    tools {
-        nodejs "node-20"
+    agent {
+        dockerfile true
     }
+    // tools {
+    //     nodejs "node-20"
+    // }
     stages {
         stage('Build') {
             steps {
