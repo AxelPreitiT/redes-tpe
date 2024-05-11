@@ -1,10 +1,8 @@
 pipeline {
-    agent {
-        docker { image 'node:20.11.1-alpine3.19' }
+    agent any
+    tools {
+        nodejs "node-20"
     }
-    // tools {
-    //     nodejs "node-20"
-    // }
     stages {
         stage('Build') {
             steps {
@@ -17,6 +15,9 @@ pipeline {
         stage('Test') {
             steps {
                 echo 'Testing'
+                sh 'npm run dev > /dev/null 2>&1 & api_pid=$!'
+                sh 'npm run test'
+                sh 'kill "$api_pid"'
             }
         }
         stage('Deploy') {
