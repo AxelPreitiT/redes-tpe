@@ -1,8 +1,6 @@
 pipeline {
-    agent { 
-        dockerfile {
-            filename 'Dockerfile'
-        }
+    agent {
+        docker { image 'node:20.11.1-alpine3.19' }
     }
     // tools {
     //     nodejs "node-20"
