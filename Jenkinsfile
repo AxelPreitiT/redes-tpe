@@ -1,6 +1,8 @@
 pipeline {
-    agent {
-        dockerfile true
+    agent { 
+        dockerfile {
+            filename 'Dockerfile'
+        }
     }
     // tools {
     //     nodejs "node-20"
