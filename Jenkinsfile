@@ -1,6 +1,7 @@
 def buildResponse
 def testResponse
 def deployResponse
+def deployInput
 pipeline {
     agent any
     tools {
@@ -57,6 +58,12 @@ pipeline {
                 echo 'Deploying'
                 script{
                     deployResponse = slackSend (message: "Deploy stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+                    deployInput = input id: 'Approve_deploy', message: 'Are you sure you want to deploy the build?', ok: 'Deploy'
+                    if( "${deployInput}" == "Deploy"){
+                        echo "Deployed"
+                    } else {
+                        echo "Not deployed"
+                    }
                 }
             }
             post {
