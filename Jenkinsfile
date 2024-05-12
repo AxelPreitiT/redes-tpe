@@ -51,6 +51,9 @@ pipeline {
                         testResponse.addReaction("x")    
                     }
                 }
+                aborted{
+                    
+                }
             }
         }
         stage('Deploy') {
@@ -58,12 +61,8 @@ pipeline {
                 echo 'Deploying'
                 script{
                     deployResponse = slackSend (message: "Deploy stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
-                    deployInput = input id: 'Approve_deploy', message: 'Are you sure you want to deploy the build?', ok: 'Deploy'
-                    if( "${deployInput}" == "Deploy"){
-                        echo "Deployed"
-                    } else {
-                        echo "Not deployed"
-                    }
+                    input id: 'Approve_deploy', message: 'Are you sure you want to deploy the build?', ok: 'Deploy'
+                    echo "Deployed"
                 }
             }
             post {
@@ -76,6 +75,11 @@ pipeline {
                     script{
                         deployResponse.addReaction("x")    
                     }
+                }
+                aborted {
+                    script{
+                        deployResponse.addReaction("no_entry")    
+                    } 
                 }
             }
             
