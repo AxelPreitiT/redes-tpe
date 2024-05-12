@@ -17,7 +17,6 @@ pipeline {
                 echo 'Testing'
                 sh 'npm run dev > /dev/null 2>&1 & api_pid=$!'
                 sh 'npm run test'
-                sh 'kill "$api_pid"'
             }
         }
         stage('Deploy') {
