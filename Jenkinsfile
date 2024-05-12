@@ -58,6 +58,8 @@ pipeline {
                 echo 'Deploying'
                 script{
                     deployResponse = slackSend (message: "Deploy stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+                    slackSend (message: "Please check your emails to authorize the deployment ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+                    emailext(attachLog: true, body: 'Hello Jose', subject: 'This is a test for an email', to: 'jmentasti@itba.edu.ar')
                     input id: 'Approve_deploy', message: 'Are you sure you want to deploy the build?', ok: 'Deploy'
                     echo "Deployed"
                 }
