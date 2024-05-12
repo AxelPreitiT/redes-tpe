@@ -8,10 +8,10 @@ pipeline {
             steps {
                 script{
                     echo 'Building'
-                    def buildResponse = slackSend (message: "Start Build stage finished for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+                    def buildResponse = slackSend (message: "Build stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
                     sh 'npm install'
                     sh 'npm run build'
-                    buildResponse.addReaction("thumbsup")
+                    buildResponse.addReaction("white_check_mark")
                 }
                 // emailext(attachLog: true, body: 'Hello Jose', subject: 'This is a test for an email', to: 'jmentasti@itba.edu.ar')
             }
@@ -20,10 +20,10 @@ pipeline {
             steps {
                 script{
                     echo 'Testing'
-                    def testResponse = slackSend (message: "Test stage finished for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+                    def testResponse = slackSend (message: "Test stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
                     sh 'npm run dev > /dev/null 2>&1 & api_pid=$!'
                     sh 'npm run test'
-                    testResponse.addReaction("thumbsup")
+                    testResponse.addReaction("white_check_mark")
                 }
                 
             }
