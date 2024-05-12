@@ -9,14 +9,25 @@ pipeline {
     stages {
         stage('Build') {
             steps {
+                echo 'Building'
                 script{
-                    echo 'Building'
                     buildResponse = slackSend (message: "Build stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
-                    sh 'npm install'
-                    sh 'npm run build'
-                    buildResponse.addReaction("white_check_mark")
                 }
+                sh 'npm install'
+                sh 'npm run build'
                 // emailext(attachLog: true, body: 'Hello Jose', subject: 'This is a test for an email', to: 'jmentasti@itba.edu.ar')
+            }
+            post {
+                success {
+                    script {
+                        buildResponse.addReaction("white_check_mark")       
+                    }
+                }
+                failure {
+                    script {
+                        buildResponse.addReaction("x")    
+                    }
+                }
             }
         }
         stage('Test') {
@@ -44,19 +55,19 @@ pipeline {
         stage('Deploy') {
             steps{
                 echo 'Deploying'
-                deployResponse = slackSend (message: "Deploy stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+                script{
+                    deployResponse = slackSend (message: "Deploy stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+                }
             }
             post {
-                post {
-                    success {
-                        script{
-                            deployResponse.addReaction("white_check_mark")       
-                        }
+                success {
+                    script{
+                        deployResponse.addReaction("white_check_mark")       
                     }
-                    failure {
-                        script{
-                            deployResponse.addReaction("x")    
-                        }
+                }
+                failure {
+                    script{
+                        deployResponse.addReaction("x")    
                     }
                 }
             }
