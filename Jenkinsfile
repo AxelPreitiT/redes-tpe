@@ -1,3 +1,6 @@
+def buildResponse
+def testResponse
+def deployResponse
 pipeline {
     agent any
     tools {
@@ -8,7 +11,7 @@ pipeline {
             steps {
                 script{
                     echo 'Building'
-                    def buildResponse = slackSend (message: "Build stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+                    buildResponse = slackSend (message: "Build stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
                     sh 'npm install'
                     sh 'npm run build'
                     buildResponse.addReaction("white_check_mark")
@@ -18,20 +21,46 @@ pipeline {
         }
         stage('Test') {
             steps {
+                echo 'Testing'
                 script{
-                    echo 'Testing'
-                    def testResponse = slackSend (message: "Test stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
-                    sh 'npm run dev > /dev/null 2>&1 & api_pid=$!'
-                    sh 'npm run test'
-                    testResponse.addReaction("white_check_mark")
+                    testResponse = slackSend (message: "Test stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
                 }
-                
+                sh 'npm run dev > /dev/null 2>&1 & api_pid=$!'
+                sh 'npm run test'
+            }
+            post {
+                success {
+                    script{
+                        testResponse.addReaction("white_check_mark")       
+                    }
+                }
+                failure {
+                    script{
+                        testResponse.addReaction("x")    
+                    }
+                }
             }
         }
         stage('Deploy') {
-            steps {
+            steps{
                 echo 'Deploying'
+                deployResponse = slackSend (message: "Deploy stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
             }
+            post {
+                post {
+                    success {
+                        script{
+                            deployResponse.addReaction("white_check_mark")       
+                        }
+                    }
+                    failure {
+                        script{
+                            deployResponse.addReaction("x")    
+                        }
+                    }
+                }
+            }
+            
         }
     }
 }
