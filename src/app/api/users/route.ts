@@ -1,5 +1,5 @@
 export const GET = (request: Request) => {
-    return Response.,json({
+    return Response.json({
         users: [{
             id: 0,
             name: "Gaston",
