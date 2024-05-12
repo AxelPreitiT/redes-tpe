@@ -1,10 +1,12 @@
 const { Builder } = require("selenium-webdriver");
+const { Options } = require("selenium-webdriver/chrome") 
 
 test("new next app", async () => {
     let driver;
-
+    let options = new Options();
+    options.addArguments('--headless');
     try {
-        driver = await new Builder().forBrowser('chrome').build();
+        driver = await new Builder().forBrowser('chrome').setChromeOptions(options).build();
         await driver.get('http://localhost:3000');
 
         const title = await driver.getTitle();
