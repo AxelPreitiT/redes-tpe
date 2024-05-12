@@ -51,9 +51,6 @@ pipeline {
                         testResponse.addReaction("x")    
                     }
                 }
-                aborted{
-                    
-                }
             }
         }
         stage('Deploy') {
