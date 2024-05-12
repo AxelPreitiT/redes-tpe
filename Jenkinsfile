@@ -34,6 +34,7 @@ pipeline {
         stage('Test') {
             steps {
                 echo 'Testing'
+                echo 'With webhook'
                 script{
                     testResponse = slackSend (message: "Test stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
                 }
