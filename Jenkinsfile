@@ -3,10 +3,7 @@ def testResponse
 def deployResponse
 def deployInput
 pipeline {
-    agent any
-    tools {
-        nodejs "node-20"
-    }
+    agent { dockerfile true }
     stages {
         stage('Build') {
             steps {
@@ -16,7 +13,6 @@ pipeline {
                 }
                 sh 'npm install'
                 sh 'npm run build'
-                // emailext(attachLog: true, body: 'Hello Jose', subject: 'This is a test for an email', to: 'jmentasti@itba.edu.ar')
             }
             post {
                 success {
@@ -38,8 +34,8 @@ pipeline {
                 script{
                     testResponse = slackSend (message: "Test stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
                 }
-                // sh 'npm run dev > /dev/null 2>&1 & api_pid=$!'
-                // sh 'npm run test'
+                sh 'npm run dev > /dev/null 2>&1 & api_pid=$!'
+                sh 'npm run test'
             }
             post {
                 success {
