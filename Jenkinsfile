@@ -54,9 +54,9 @@ pipeline {
             }
         }
         stage('Deploy') {
-            steps{
+            steps {
                 echo 'Deploying'
-                script{
+                script {
                     deployResponse = slackSend (message: "Deploy stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
                     slackSend (message: "Please check your emails to authorize the deployment ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
                     emailext mimeType: 'text/html',
@@ -64,6 +64,16 @@ pipeline {
                         to: "jmentasti@itba.edu.ar",
                         body: '''<a href="${BUILD_URL}input">click to review</a>'''
                     input id: 'Approve_deploy', message: 'Are you sure you want to deploy the build?', ok: 'Deploy'
+                    sh 'cp .next/static .next/standalone/.next/static'
+                    sh 'cp public .next/standalone/public'
+                    sh 'zip deploy .next -qr'
+                    withEnv(['RESOURCE_GROUP_NAME=Jenkins-Deployment',
+                            'WEB_APP_NAME=redes-jenkins-deploy']){
+                        withCredentials([usernamePassword(credentialsId: 'azure-jose', passwordVariable: 'AZURE_CLIENT_SECRET', usernameVariable: 'AZURE_CLIENT_ID')]) {
+                            sh 'read -sp "Azure password: " AZURE_CLIENT_SECRET && echo && az login -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET'
+                            sh 'az webapp deploy --resource-group $RESOURCE_GROUP_NAME --name $WEB_APP_NAME --src-path deploy.zip --type zip --clean true'
+                        }
+                    }
                     echo "Deployed"
                 }
             }
