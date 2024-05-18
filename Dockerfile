@@ -11,7 +11,7 @@ RUN wget https://storage.googleapis.com/chrome-for-testing-public/124.0.6367.201
     unzip chromedriver-linux64.zip &&\
     mv chromedriver-linux64/chromedriver /usr/bin/
   
-RUN curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+RUN curl -sL https://aka.ms/InstallAzureCLIDeb | bash
 
 RUN apt install zip
 
