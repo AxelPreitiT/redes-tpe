@@ -85,7 +85,7 @@ pipeline {
                     emailext mimeType: 'text/html',
                         subject: "[Jenkins]${currentBuild.fullDisplayName}",
                         to: "jmentasti@itba.edu.ar",
-                        body: """<a href="${BUILD_URL}input">Click to review</a>. Test it on <a href="${developmentUrl}>the dev branch</a>."""
+                        body: """<a href="${BUILD_URL}input">Click to review</a>. Test it on <a href="${developmentUrl}">the dev branch</a>."""
                     input id: 'Approve_deploy', message: "Are you sure you want to deploy the build?", ok: 'Deploy'
                     withEnv(['RESOURCE_GROUP_NAME=Jenkins-Deployment',
                             'WEB_APP_NAME=redes-jenkins-deploy']) {
