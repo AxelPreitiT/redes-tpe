@@ -69,23 +69,23 @@ pipeline {
                     sh 'zip deploy .next -qr'
                     withEnv(['RESOURCE_GROUP_NAME=redes-jenkins-development_group',
                             'WEB_APP_NAME=redes-jenkins-development']) {
-                        developmentOutput = sh script: 'az webapp deploy --resource-group $RESOURCE_GROUP_NAME --name $WEB_APP_NAME --src-path deploy.zip --type zip --clean true', returnStdout: true
+                        developmentOutput = sh script: 'az webapp deploy --resource-group $RESOURCE_GROUP_NAME --name $WEB_APP_NAME --src-path deploy.zip --type zip --clean true 2>&1', returnStdout: true
                     }
                     echo "Command Output: ${developmentOutput}"
-                    def urlLine = commandOutput.readLines().find { it.contains("WARNING: You can visit your app at:") }
-                    def deploymentUrl = ""
+                    def urlLine = developmentOutput.readLines().find { it.contains("WARNING: You can visit your app at:") }
+                    def developmentUrl = ""
                      if (urlLine) {
                         def urlMatcher = (urlLine =~ /WARNING: You can visit your app at: (http:\/\/[^\s]+)/)
                         if (urlMatcher.find()) {
-                            deploymentUrl = urlMatcher.group(1)
+                            developmentUrl = urlMatcher.group(1)
                         }
                     }
-                    echo "Deployment URL: ${deploymentUrl}"
-                    slackSend (message: "Please check your emails to authorize the deployment ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>). The build is now deployed on (<${developmentUrl}|the dev branch.>)")
+                    echo "Development URL: ${developmentUrl}"
+                    slackSend (message: "Please visit Jenkins to authorize the ${env.JOB_NAME} ${env.BUILD_NUMBER} deployment (<${env.BUILD_URL}input|Open>). The development build is now deployed <${developmentUrl}|here>.")
                     emailext mimeType: 'text/html',
                         subject: "[Jenkins]${currentBuild.fullDisplayName}",
                         to: "jmentasti@itba.edu.ar",
-                        body: '''<a href="${BUILD_URL}input">click to review</a>. Test it on (<${developmentUrl}|the dev branch.>)'''
+                        body: """<a href="${BUILD_URL}input">Click to review</a>. Test it on <a href="${developmentUrl}>the dev branch</a>."""
                     input id: 'Approve_deploy', message: "Are you sure you want to deploy the build?", ok: 'Deploy'
                     withEnv(['RESOURCE_GROUP_NAME=Jenkins-Deployment',
                             'WEB_APP_NAME=redes-jenkins-deploy']) {
