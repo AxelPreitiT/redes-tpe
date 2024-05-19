@@ -2,8 +2,10 @@ def buildResponse
 def testResponse
 def deployResponse
 def deployInput
+def developmentOutput
 pipeline {
-    agent { dockerfile {
+    agent { 
+        dockerfile {
             filename 'Dockerfile'
         }
     }
@@ -11,7 +13,7 @@ pipeline {
         stage('Build') {
             steps {
                 echo 'Building'
-                script{
+                script {
                     buildResponse = slackSend (message: "Build stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
                 }
                 sh 'npm install'
@@ -42,12 +44,12 @@ pipeline {
             }
             post {
                 success {
-                    script{
+                    script {
                         testResponse.addReaction("white_check_mark")       
                     }
                 }
                 failure {
-                    script{
+                    script {
                         testResponse.addReaction("x")    
                     }
                 }
@@ -58,44 +60,57 @@ pipeline {
                 echo 'Deploying'
                 script {
                     deployResponse = slackSend (message: "Deploy stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
-                    slackSend (message: "Please check your emails to authorize the deployment ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
-                    emailext mimeType: 'text/html',
-                        subject: "[Jenkins]${currentBuild.fullDisplayName}",
-                        to: "jmentasti@itba.edu.ar",
-                        body: '''<a href="${BUILD_URL}input">click to review</a>'''
-                    input id: 'Approve_deploy', message: 'Are you sure you want to deploy the build?', ok: 'Deploy'
+                    withCredentials([usernamePassword(credentialsId: 'azure-jose', passwordVariable: 'AZURE_CLIENT_SECRET', usernameVariable: 'AZURE_CLIENT_ID')]) {
+                            sh 'az login -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET > /dev/null'
+                    }
                     sh 'npm run build'
                     sh 'cp -r .next/static .next/standalone/.next/static'
                     sh 'cp -r public .next/standalone/public'
                     sh 'zip deploy .next -qr'
-                    withEnv(['RESOURCE_GROUP_NAME=Jenkins-Deployment',
-                            'WEB_APP_NAME=redes-jenkins-deploy']){
-                        withCredentials([usernamePassword(credentialsId: 'azure-jose', passwordVariable: 'AZURE_CLIENT_SECRET', usernameVariable: 'AZURE_CLIENT_ID')]) {
-                            sh 'az login -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET > /dev/null'
-                            sh 'az webapp deploy --resource-group $RESOURCE_GROUP_NAME --name $WEB_APP_NAME --src-path deploy.zip --type zip --clean true'
+                    withEnv(['RESOURCE_GROUP_NAME=redes-jenkins-development_group',
+                            'WEB_APP_NAME=redes-jenkins-development']) {
+                        developmentOutput = sh script: 'az webapp deploy --resource-group $RESOURCE_GROUP_NAME --name $WEB_APP_NAME --src-path deploy.zip --type zip --clean true', returnStdout: true
+                    }
+                    echo "Command Output: ${developmentOutput}"
+                    def urlLine = commandOutput.readLines().find { it.contains("WARNING: You can visit your app at:") }
+                    def deploymentUrl = ""
+                     if (urlLine) {
+                        def urlMatcher = (urlLine =~ /WARNING: You can visit your app at: (http:\/\/[^\s]+)/)
+                        if (urlMatcher.find()) {
+                            deploymentUrl = urlMatcher.group(1)
                         }
+                    }
+                    echo "Deployment URL: ${deploymentUrl}"
+                    slackSend (message: "Please check your emails to authorize the deployment ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>). The build is now deployed on (<${developmentUrl}|the dev branch.>)")
+                    emailext mimeType: 'text/html',
+                        subject: "[Jenkins]${currentBuild.fullDisplayName}",
+                        to: "jmentasti@itba.edu.ar",
+                        body: '''<a href="${BUILD_URL}input">click to review</a>. Test it on (<${developmentUrl}|the dev branch.>)'''
+                    input id: 'Approve_deploy', message: "Are you sure you want to deploy the build?", ok: 'Deploy'
+                    withEnv(['RESOURCE_GROUP_NAME=Jenkins-Deployment',
+                            'WEB_APP_NAME=redes-jenkins-deploy']) {
+                        sh 'az webapp deploy --resource-group $RESOURCE_GROUP_NAME --name $WEB_APP_NAME --src-path deploy.zip --type zip --clean true'
                     }
                     echo "Deployed"
                 }
             }
             post {
                 success {
-                    script{
+                    script {
                         deployResponse.addReaction("white_check_mark")       
                     }
                 }
                 failure {
-                    script{
+                    script {
                         deployResponse.addReaction("x")    
                     }
                 }
                 aborted {
-                    script{
+                    script {
                         deployResponse.addReaction("no_entry")    
                     } 
                 }
-            }
-            
+            }            
         }
     }
 }
