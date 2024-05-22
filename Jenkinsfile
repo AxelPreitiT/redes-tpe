@@ -45,7 +45,8 @@ pipeline {
             post {
                 success {
                     script {
-                        testResponse.addReaction("white_check_mark")       
+                        testResponse.addReaction("white_check_mark")
+                        jiraSendBuildInfo site: 'redesjenkins.atlassian.net', branch: 'TEST-123-awesome-feature'
                     }
                 }
                 failure {
