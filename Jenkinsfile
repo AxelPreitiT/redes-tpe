@@ -49,7 +49,7 @@ pipeline {
                         withCredentials([usernamePassword(credentialsId: 'jira-token', passwordVariable: 'JIRA_API_TOKEN', usernameVariable: 'JIRA_EMAIL')]) {
                             sh 'curl --request POST --url "https://redesjenkins.atlassian.net/rest/api/3/issue" \
                                 --user "$JIRA_EMAIL:$JIRA_API_TOKEN"  --header "Accept: application/json" --header "Content-Type: application/json" \
-                                --data "{
+                                --data """{
                                     "fields": {
                                         "project": {
                                             "key": "RED"
@@ -60,7 +60,7 @@ pipeline {
                                             "name": "Task"
                                         }
                                     }
-                                }"'
+                                }"""'
                         }
                     }
                 }
