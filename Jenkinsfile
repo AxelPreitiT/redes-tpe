@@ -46,7 +46,17 @@ pipeline {
                 success {
                     script {
                         testResponse.addReaction("white_check_mark")
-                        jiraSendBuildInfo site: 'redesjenkins.atlassian.net', branch: 'TEST-123-awesome-feature'
+                        def ticketID = jiraNewIssue(
+                            id: 'REDES',
+                            summary: "Build ${env.JOB_NAME} ${env.BUILD_NUMBER} passed",
+                            description: "The build ${env.JOB_NAME} ${env.BUILD_NUMBER} passed successfully. Please review it.",
+                            issueType: 'Task',
+                            projectKey: 'REDES'
+                        )
+                        jiraAddComment(
+                            id: ticketID,
+                            comment: "The build ${env.JOB_NAME} ${env.BUILD_NUMBER} passed successfully. Please review it."
+                        )
                     }
                 }
                 failure {
