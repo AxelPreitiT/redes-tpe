@@ -46,17 +46,22 @@ pipeline {
                 success {
                     script {
                         testResponse.addReaction("white_check_mark")
-                        def ticketID = jiraNewIssue(
-                            id: 'REDES',
-                            summary: "Build ${env.JOB_NAME} ${env.BUILD_NUMBER} passed",
-                            description: "The build ${env.JOB_NAME} ${env.BUILD_NUMBER} passed successfully. Please review it.",
-                            issueType: 'Task',
-                            projectKey: 'REDES'
-                        )
-                        jiraAddComment(
-                            id: ticketID,
-                            comment: "The build ${env.JOB_NAME} ${env.BUILD_NUMBER} passed successfully. Please review it."
-                        )
+                        withCredentials([usernamePassword(credentialsId: 'jira-token', passwordVariable: 'JIRA_API_TOKEN', usernameVariable: 'JIRA_EMAIL')]) {
+                            sh 'curl --request POST --url "https://redesjenkins.atlassian.net/rest/api/3/issue" \
+                                --user "$JIRA_EMAIL:$JIRA_API_TOKEN"  --header "Accept: application/json" --header "Content-Type: application/json" \
+                                --data "{
+                                    "fields": {
+                                        "project": {
+                                            "key": "RED"
+                                        },
+                                        "summary": "Test passed",
+                                        "description": "The test stage passed successfully",
+                                        "issuetype": {
+                                            "name": "Task"
+                                        }
+                                    }
+                                }"'
+                        }
                     }
                 }
                 failure {
