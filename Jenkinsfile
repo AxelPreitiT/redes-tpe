@@ -58,11 +58,13 @@ pipeline {
             post {
                 success {
                     script {
+                        junit skipPublishingChecks: true, testResults: 'junit.xml'
                         testResponse.addReaction("white_check_mark")
                     }
                 }
                 failure {
                     script {
+                        junit skipPublishingChecks: true, testResults: 'junit.xml' 
                         testResponse.addReaction("x") 
                         slackInit.addReaction("x")
                         sh '''curl -D- -u $JIRA_CRED -X POST --data '{ \"fields\": { \"project\": { \"key\": \"'$JIRA_KEY'\" }, \"summary\": \"Test failed: #'$BUILD_NUMBER'\", \"issuetype\": { \"name\": \"'$JIRA_ISSUE_TYPE_NAME'\" } } }' -H 'Content-Type: application/json' $JIRA_URL/rest/api/3/issue'''      
