@@ -46,18 +46,10 @@ pipeline {
                 success {
                     script {
                         testResponse.addReaction("white_check_mark")
-                        withCredentials([usernamePassword(credentialsId: 'jira-token', passwordVariable: 'JIRA_API_TOKEN', usernameVariable: 'JIRA_EMAIL')]) {
-                            sh 'curl --request POST --url "https://redesjenkins.atlassian.net/rest/api/3/issue" \
-                                --user "$JIRA_EMAIL:$JIRA_API_TOKEN"  --header "Accept: application/json" --header "Content-Type: application/json" \
-                                --data """{ \
-                                    "fields": { \
-                                        "summary": "Test passed", \
-                                        "description": "The test stage passed successfully", \
-                                        "issuetype": { \
-                                            "name": "Task" \
-                                        } \
-                                    } \
-                                }"""'
+                        withEnv(['JIRA_URL=https://redesjenkins.atlassian.net', 'JIRA_KEY=KAN', 'JIRA_ISSUE_TYPE_NAME=Error']) {
+                            withCredentials([usernamePassword(credentialsId: 'jira-token', passwordVariable: 'JIRA_TOKEN', usernameVariable: 'JIRA_USER')]) {
+                                sh '''curl -D- -u $JIRA_USER:$JIRA_TOKEN -X POST --data '{ \"fields\": { \"project\": { \"key\": \"$JIRA_KEY\" }, \"summary\": \"Bug from Jenkins\", \"issuetype\": { \"name\": \"$JIRA_ISSUE_TYPE_NAME\" } }  }' -H 'Content-Type: application/json' $JIRA_URL/rest/api/3/issue'''
+                            }
                         }
                     }
                 }
