@@ -134,6 +134,17 @@ Para los casos de Github, emails, Azure y Jira, se debe configurar una credencia
 
 Para el acceso al repositorio, se puede configurar un _fine-grained token_ para limitar el acceso al repositorio que se quiere vincular al pipeline. Para mas información, consultar [este link](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token).
 
+Los permisos que recomendamos darle al Token para el repositorio del proyecto son: (TODO revisar para bajarlos)
+- Actions: Read and Write
+- Code scanning alerts: Read and Write
+- Commit statuses: Read and Write
+- Contents: Read and Write
+- Deployments: Read and Write
+- Issues: Read and Write
+- Metadata: Read-only
+- Pull Requests: Read and Write
+- Webhooks: Read and Write
+
 #### Emails
 
 Para el servicio de emails, se puede utilizar una cuenta de Gmail, pero en las credenciales se debe usar un _App Password_ como contraseña. Para más información, consultar [este link](https://support.google.com/accounts/answer/185833?sjid=17107983271934554516-SA)
