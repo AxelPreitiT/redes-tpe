@@ -117,7 +117,6 @@ pipeline {
             post {
                 success {
                     script {
-                        slackInit.removeReaction("stopwatch")
                         slackInit.addReaction("white_check_mark")    
                         deployResponse.addReaction("white_check_mark")
                         deployResponse2.addReaction("white_check_mark")       
@@ -125,7 +124,6 @@ pipeline {
                 }
                 failure {
                     script {
-                        slackInit.removeReaction("stopwatch")
                         deployResponse.addReaction("x")
                         slackInit.addReaction("x")
                         sh '''curl -D- -u $JIRA_CRED -X POST --data '{ \"fields\": { \"project\": { \"key\": \"'$JIRA_KEY'\" }, \"summary\": \"Deploy failed: #'$BUILD_NUMBER'\", \"issuetype\": { \"name\": \"'$JIRA_ISSUE_TYPE_NAME'\" } } }' -H 'Content-Type: application/json' $JIRA_URL/rest/api/3/issue''' 
@@ -134,11 +132,13 @@ pipeline {
                 }
                 aborted {
                     script {
-                        slackInit.removeReaction("stopwatch")
                         deployResponse.addReaction("no_entry")
                         slackInit.addReaction("no_entry")  
                         deployResponse2.addReaction("no_entry")     
                     } 
+                }
+                always {
+                    slackInit.removeReaction("stopwatch")
                 }
             }            
         }

@@ -18,8 +18,7 @@ pipeline {
             steps {
                 script {
                     slackResponse = slackSend (message: "Pipeline for Pull Request #$CHANGE_ID run. Review it on GitHub.")
-                    
-                    slackResponse.addReaction()
+                    slackInit.addReaction("stopwatch")
                     slackBuild = slackSend(channel: slackResponse.threadId, message: "Build stage")
                     sh '''curl -D- -u $JIRA_CRED -X POST --data '{ \"fields\": { \"project\": { \"key\": \"'$JIRA_KEY'\" }, \"summary\": \"Pull Request open: #'$CHANGE_ID'\", \"issuetype\": { \"name\": \"'$JIRA_ISSUE_TYPE_NAME'\" } } }' -H 'Content-Type: application/json' $JIRA_URL/rest/api/3/issue'''      
                 }
@@ -32,6 +31,7 @@ pipeline {
                     slackBuild.addReaction("white_check_mark")
                 }
                 failure{
+                    slackInit.removeReaction("stopwatch")
                     slackBuild.addReaction("x")
                     slackResponse.addReaction("x")
                 }
@@ -56,6 +56,11 @@ pipeline {
                     script {
                         slackTest.addReaction("x")
                         slackResponse.addReaction("x")
+                    }
+                }
+                always {
+                    script {
+                        slackInit.removeReaction("stopwatch")
                     }
                 }
             }
