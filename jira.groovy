@@ -10,3 +10,5 @@ def createJiraIssue(url, key, issueTypeName, cred, title, link, linkTitle) {
 def addJiraComment(comment, jiraKey) {
     jiraComment body: comment, issueKey: jiraKey
 }
+
+return this
