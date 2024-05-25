@@ -13,7 +13,7 @@ pipeline {
         JIRA_URL = 'https://redesjenkins.atlassian.net'
         JIRA_KEY = 'KAN'
         JIRA_ISSUE_TYPE_NAME = 'JenkinsPR'
-        JIRA_CRED = credentials('jira-token')
+        JIRA_CRED_ID = 'jira-token'
     }
     stages {
         stage('Build') {
@@ -23,7 +23,7 @@ pipeline {
                     slackInit = slackSend(message: "Pipeline for Pull Request #$CHANGE_ID run. Review it on GitHub.")
                     slackInit.addReaction("stopwatch")
                     slackBuild = slackSend(channel: slackInit.threadId, message: "Build stage")
-                    jiraFunctions.createIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Pull Request opened: #$CHANGE_ID", "https://github.com/AxelPreitiT/redes-tpe/pull/$CHANGE_ID", "Pull Request #$CHANGE_ID")
+                    jiraFunctions.createIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED_ID, "Pull Request opened: #$CHANGE_ID", "https://github.com/AxelPreitiT/redes-tpe/pull/$CHANGE_ID", "Pull Request #$CHANGE_ID")
                 }
                 echo 'Building'
                 sh 'npm install'

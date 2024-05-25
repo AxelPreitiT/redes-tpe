@@ -17,7 +17,7 @@ pipeline {
         JIRA_URL = 'https://redesjenkins.atlassian.net'
         JIRA_KEY = 'KAN'
         JIRA_ISSUE_TYPE_NAME = 'JenkinsError'
-        JIRA_CRED = credentials('jira-token')
+        JIRA_CRED_ID = 'jira-token'
     }
     stages {
         stage('Build') {
@@ -45,7 +45,7 @@ pipeline {
                         buildResponse.addReaction("x")
                         slackInit.removeReaction("stopwatch")
                         slackInit.addReaction("x")
-                        jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Build failed: #'$BUILD_NUMBER'", env.BUILD_URL, "Jenkins build")
+                        jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED_ID, "Build failed: #'$BUILD_NUMBER'", env.BUILD_URL, "Jenkins build")
                     }
                 }
             }
@@ -71,7 +71,7 @@ pipeline {
                         testResponse.addReaction("x") 
                         slackInit.removeReaction("stopwatch")
                         slackInit.addReaction("x")
-                        jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Test failed: #'$BUILD_NUMBER'", env.BUILD_URL, "Jenkins test")
+                        jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED_ID, "Test failed: #'$BUILD_NUMBER'", env.BUILD_URL, "Jenkins build")
                     }
                 }
             }
@@ -128,7 +128,7 @@ pipeline {
                     script {
                         deployResponse.addReaction("x")
                         slackInit.addReaction("x")
-                        jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Deploy failed: #'$BUILD_NUMBER'", env.BUILD_URL, "Jenkins deploy")
+                        jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED_ID, "Deploy failed: #'$BUILD_NUMBER'", env.BUILD_URL, "Jenkins build")
                         deployResponse2.addReaction("x")   
                     }
                 }
