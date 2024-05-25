@@ -45,6 +45,7 @@ pipeline {
             post {
                 success {
                     script {
+                        junit skipPublishingChecks: true, testResults: 'junit.xml'
                         testResponse.addReaction("white_check_mark")
                         withEnv(['JIRA_URL=https://redesjenkins.atlassian.net', 'JIRA_KEY=KAN', 'JIRA_ISSUE_TYPE_NAME=Error']) {
                             withCredentials([usernamePassword(credentialsId: 'jira-token', passwordVariable: 'JIRA_TOKEN', usernameVariable: 'JIRA_USER')]) {
@@ -55,6 +56,7 @@ pipeline {
                 }
                 failure {
                     script {
+                        junit skipPublishingChecks: true, testResults: 'junit.xml' 
                         testResponse.addReaction("x")    
                     }
                 }

@@ -7,9 +7,10 @@
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
-    "test": "jest"
+    "test": "jest --reporters=jest-junit"
   },
   "dependencies": {
+    "jest-junit": "^16.0.0",
     "next": "14.2.3",
     "react": "^18",
     "react-dom": "^18",
