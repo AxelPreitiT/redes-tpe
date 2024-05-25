@@ -25,7 +25,7 @@ Después, en la pantalla de configuración del pipeline:
     1. En _Definition_, elegir la opción de _Pipeline Script from SCM_. 
     2.  _SCM_, elegir la opción de _Git_
     3. En _Repository URL_, agregar la URL al repositorio
-    4. En _Credentials_, elegir las credenciales creadas en la configuración de Jenkins para poder acceder al repositorio.
+    4. En _Credentials_, elegir las credenciales creadas en [la configuración de Jenkins](Jenkins.md#github) para poder acceder al repositorio.
     5. En _Branches to build_, especificar que queremos ejecutar el pipeline sólo para commits en la branch `main`
     con el valor `*/main`
     6. En la opción de _Script Path_, especificar que el pipeline estará definido en el archivo _Jenkinsfile_ en la raíz del proyecto con el valor `Jenkinsfile`
@@ -50,11 +50,11 @@ Después, en la configuración del pipeline:
 
 <img src="img/pipeline/multibranch_add_source.png" alt="drawing" width="500" style="display:block;margin:auto"/>
 
-2. En _Credentials_ elegir el id de las credenciales para el repositorio de Github y configurar la URL del repositorio. 
+2. En _Credentials_ elegir el id de las credenciales para el repositorio de Github creadas en la [configuración de Jenkins](Jenkins.md#github) y configurar la URL del repositorio. 
 
 <img src="img/pipeline/multibranch_credentials.png" alt="drawing" width="500" style="display:block;margin:auto"/>
 
-3. En la sección de _Behaviours_ , para la opción de _Discover pull requests from origin_ elegir la opción de _Merging the pull request with the current target branch version" de las opciones para _Strategy_. Luego, eliminar las otras opciones.
+3. En la sección de _Behaviours_ , para la opción de _Discover pull requests from origin_ elegir la opción de _Merging the pull request with the current target branch version_ de las opciones para _Strategy_. Luego, eliminar las otras opciones.
 
 <img src="img/pipeline/multibranch_behaviours.png" alt="drawing" width="500" style="display:block;margin:auto"/>
 
@@ -77,4 +77,19 @@ Luego, copiar el URL indicado (`<jenkins_url>/github-webhook/`) y desmarcar la o
 
 #### Configuración en Github
 
-TODO: pedirle a Axel
+Ir a la pestaña de _Settings_ en el repositorio, y seleccionar la opción de _Webhooks_ del proyecto. 
+
+<img src="img/pipeline/github_webhooks.png" alt="drawing" width="500" style="display:block;margin:auto"/>
+
+Hacer click en el botón _Add webhook_ para configurar un nuevo Webhook para las tareas de Jenkins y luego:
+- Completar el campo _Payload URL_ con el valor obtenido en el paso [anterior](Pipeline#configuración-en-jenkins)
+- Dejar para _Content type_ la opción de _application/x-www-form-urlencoded_
+- Dejar el campo _Secret_ vacío
+- Para la opción de _Which events would you like to trigger this webhook?_, seleccionar la opción de _Let me select individual events._ y seleccionar las opciones de (TODO preguntar axel):
+    - Pushes
+    - Pull requests
+- Mantener la opción de _Active_ 
+
+<img src="img/pipeline/github_webhook_1.png" alt="drawing" width="500" style="display:block;margin:auto"/>
+<img src="img/pipeline/github_webhook_2.png" alt="drawing" width="500" style="display:block;margin:auto"/>
+<img src="img/pipeline/github_webhook_3.png" alt="drawing" width="500" style="display:block;margin:auto"/>
