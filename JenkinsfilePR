@@ -1,24 +1,54 @@
-def buildResponse
-def testResponse
-def deployResponse
-def deployInput
-def developmentOutput
+def slackInit
+def slackBuild
+def slackTest
+def jiraFunctions
+
 pipeline {
     agent {
         dockerfile {
             filename 'Dockerfile'
         }
     }
+    environment {
+        JIRA_URL = 'https://redesjenkins.atlassian.net'
+        JIRA_KEY = 'KAN'
+        JIRA_ISSUE_TYPE_NAME = 'JenkinsPR'
+        JIRA_CRED = credentials('jira-token')
+    }
     stages {
         stage('Build') {
             steps {
+                script {
+                    jiraFunctions = load "jira.groovy"
+                    slackInit = slackSend(message: "Pipeline for Pull Request #$CHANGE_ID run. Review it on GitHub.")
+                    slackInit.addReaction("stopwatch")
+                    slackBuild = slackSend(channel: slackInit.threadId, message: "Build stage")
+                    jiraFunctions.createIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Pull Request opened: #$CHANGE_ID", "https://github.com/AxelPreitiT/redes-tpe/pull/$CHANGE_ID", "Pull Request #$CHANGE_ID")
+                }
                 echo 'Building'
                 sh 'npm install'
                 sh 'npm run build'
             }
+            post{
+                success{
+                    script {
+                        slackBuild.addReaction("white_check_mark")
+                    }
+                }
+                failure{
+                    script {
+                        slackInit.removeReaction("stopwatch")
+                        slackBuild.addReaction("x")
+                        slackInit.addReaction("x")
+                    }
+                }
+            }
         }
         stage('Test') {
             steps {
+                script {
+                    slackTest = slackSend(channel: slackInit.threadId, message: "Testing Pull Request")
+                }
                 echo 'Testing'
                 echo 'With webhook'
                 sh 'npm run dev > /dev/null 2>&1 & api_pid=$!'
@@ -27,8 +57,19 @@ pipeline {
             post {
                 success {
                     script {
-                        testResponse = slackSend (message: "New Pull Request built and tested correctly. Review it on GitHub.")
-                        testResponse.addReaction("white_check_mark")
+                        slackTest.addReaction("white_check_mark")
+                        slackInit.addReaction("white_check_mark")
+                    }
+                }
+                failure {
+                    script {
+                        slackTest.addReaction("x")
+                        slackInit.addReaction("x")
+                    }
+                }
+                always {
+                    script {
+                        slackInit.removeReaction("stopwatch")
                     }
                 }
             }

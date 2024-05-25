@@ -3,6 +3,10 @@ def testResponse
 def deployResponse
 def deployInput
 def developmentOutput
+def slackInit
+def deployResponse2
+def jiraFunctions
+
 pipeline {
     agent { 
         dockerfile {
@@ -18,9 +22,14 @@ pipeline {
     stages {
         stage('Build') {
             steps {
+                script{
+                    jiraFunctions = load "jira.groovy"
+                    slackInit = slackSend(message: "Pipeline for ${env.JOB_name} ${env.BUILD_NUMBER} run. (<${env.BUILD_URL}|Open>).")
+                    slackInit.addReaction("stopwatch")
+                }
                 echo 'Building'
                 script {
-                    buildResponse = slackSend (message: "Build stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+                    buildResponse = slackSend (channel: slackInit.threadId, message: "Build stage started")
                 }
                 sh 'npm install'
                 sh 'npm run build'
@@ -34,7 +43,9 @@ pipeline {
                 failure {
                     script {
                         buildResponse.addReaction("x")
-                        sh '''curl -D- -u $JIRA_CRED -X POST --data '{ \"fields\": { \"project\": { \"key\": \"'$JIRA_KEY'\" }, \"summary\": \"Build failed: #'$BUILD_NUMBER'\", \"issuetype\": { \"name\": \"'$JIRA_ISSUE_TYPE_NAME'\" } } }' -H 'Content-Type: application/json' $JIRA_URL/rest/api/3/issue'''   
+                        slackInit.removeReaction("stopwatch")
+                        slackInit.addReaction("x")
+                        jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Build failed: #'$BUILD_NUMBER'", env.BUILD_URL, "Jenkins build")
                     }
                 }
             }
@@ -44,8 +55,7 @@ pipeline {
                 echo 'Testing'
                 echo 'With webhook'
                 script{
-                    testResponse = slackSend (message: "Test stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
-                    slackSend(channel: testResponse.threadId, message: "Thread reply #1")
+                    testResponse = slackSend (channel: slackInit.threadId, message: "Test stage started")
                 }
                 sh 'npm run dev > /dev/null 2>&1 & api_pid=$!'
                 sh 'npm run test'
@@ -53,15 +63,15 @@ pipeline {
             post {
                 success {
                     script {
-                        junit skipPublishingChecks: true, testResults: 'junit.xml'
                         testResponse.addReaction("white_check_mark")
                     }
                 }
                 failure {
                     script {
-                        junit skipPublishingChecks: true, testResults: 'junit.xml' 
                         testResponse.addReaction("x") 
-                        sh '''curl -D- -u $JIRA_CRED -X POST --data '{ \"fields\": { \"project\": { \"key\": \"'$JIRA_KEY'\" }, \"summary\": \"Test failed: #'$BUILD_NUMBER'\", \"issuetype\": { \"name\": \"'$JIRA_ISSUE_TYPE_NAME'\" } } }' -H 'Content-Type: application/json' $JIRA_URL/rest/api/3/issue'''      
+                        slackInit.removeReaction("stopwatch")
+                        slackInit.addReaction("x")
+                        jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Test failed: #'$BUILD_NUMBER'", env.BUILD_URL, "Jenkins test")
                     }
                 }
             }
@@ -70,7 +80,7 @@ pipeline {
             steps {
                 echo 'Deploying'
                 script {
-                    deployResponse = slackSend (message: "Deploy stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+                    deployResponse = slackSend (channel: slackInit.threadId, message: "Deploy stage started")
                     withCredentials([usernamePassword(credentialsId: 'azure-jose', passwordVariable: 'AZURE_CLIENT_SECRET', usernameVariable: 'AZURE_CLIENT_ID')]) {
                             sh 'az login -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET > /dev/null'
                     }
@@ -92,12 +102,13 @@ pipeline {
                         }
                     }
                     echo "Development URL: ${developmentUrl}"
-                    slackSend (message: "Please visit Jenkins to authorize the ${env.JOB_NAME} ${env.BUILD_NUMBER} deployment (<${env.BUILD_URL}input|Open>). The development build is now deployed <${developmentUrl}|here>.")
+                    slackSend (channel: slackInit.threadId, message: "Please visit Jenkins to authorize the ${env.JOB_NAME} ${env.BUILD_NUMBER} deployment (<${env.BUILD_URL}input|Open>). The development build is now deployed <${developmentUrl}|here>.")
                     emailext mimeType: 'text/html',
                         subject: "[Jenkins]${currentBuild.fullDisplayName}",
                         to: "jmentasti@itba.edu.ar",
                         body: """<a href="${BUILD_URL}input">Click to review</a>. Test it on <a href="${developmentUrl}">the dev branch</a>."""
                     input id: 'Approve_deploy', message: "Are you sure you want to deploy the build?", ok: 'Deploy'
+                    deployResponse2 = slackSend(channel: slackInit.threadId, message:"Deploying to prod environment")
                     withEnv(['RESOURCE_GROUP_NAME=Jenkins-Deployment',
                             'WEB_APP_NAME=redes-jenkins-deploy']) {
                         sh 'az webapp deploy --resource-group $RESOURCE_GROUP_NAME --name $WEB_APP_NAME --src-path deploy.zip --type zip --clean true'
@@ -108,19 +119,30 @@ pipeline {
             post {
                 success {
                     script {
-                        deployResponse.addReaction("white_check_mark")       
+                        slackInit.addReaction("white_check_mark")    
+                        deployResponse.addReaction("white_check_mark")
+                        deployResponse2.addReaction("white_check_mark")       
                     }
                 }
                 failure {
                     script {
                         deployResponse.addReaction("x")
-                        sh '''curl -D- -u $JIRA_CRED -X POST --data '{ \"fields\": { \"project\": { \"key\": \"'$JIRA_KEY'\" }, \"summary\": \"Deploy failed: #'$BUILD_NUMBER'\", \"issuetype\": { \"name\": \"'$JIRA_ISSUE_TYPE_NAME'\" } } }' -H 'Content-Type: application/json' $JIRA_URL/rest/api/3/issue'''    
+                        slackInit.addReaction("x")
+                        jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Deploy failed: #'$BUILD_NUMBER'", env.BUILD_URL, "Jenkins deploy")
+                        deployResponse2.addReaction("x")   
                     }
                 }
                 aborted {
                     script {
-                        deployResponse.addReaction("no_entry")    
+                        deployResponse.addReaction("no_entry")
+                        slackInit.addReaction("no_entry")  
+                        deployResponse2.addReaction("no_entry")     
                     } 
+                }
+                always {
+                    script {
+                        slackInit.removeReaction("stopwatch")
+                    }
                 }
             }            
         }
