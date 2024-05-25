@@ -48,7 +48,7 @@ pipeline {
                         testResponse.addReaction("white_check_mark")
                         withEnv(['JIRA_URL=https://redesjenkins.atlassian.net', 'JIRA_KEY=KAN', 'JIRA_ISSUE_TYPE_NAME=Error']) {
                             withCredentials([usernamePassword(credentialsId: 'jira-token', passwordVariable: 'JIRA_TOKEN', usernameVariable: 'JIRA_USER')]) {
-                                sh "curl -D- -u $JIRA_USER:$JIRA_TOKEN -X POST --data '{ \"fields\": { \"project\": { \"key\": \"$JIRA_KEY\" }, \"summary\": \"Bug from Jenkins\", \"issuetype\": { \"name\": \"$JIRA_ISSUE_TYPE_NAME\" } }  }' -H 'Content-Type: application/json' $JIRA_URL/rest/api/3/issue"
+                                sh '''curl -D- -u $JIRA_USER:$JIRA_TOKEN -X POST --data '{ \"fields\": { \"project\": { \"key\": \"$JIRA_KEY\" }, \"summary\": \"Bug from Jenkins\", \"issuetype\": { \"name\": \"$JIRA_ISSUE_TYPE_NAME\" } }  }' -H 'Content-Type: application/json' $JIRA_URL/rest/api/3/issue'''
                             }
                         }
                     }
