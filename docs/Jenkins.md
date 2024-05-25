@@ -50,7 +50,7 @@ sudo systemctl enable docker
 ```bash
 sudo systemctl start docker
 ```
-## Configuración 
+## Configuración inicial
 Para la configuración de Jenkins, se utilizará la página web que provee el servidor en el puerto `8080` por default. Es necesario que desde la configuración de la VM se permitan conexiones a dicho puerto. Los pasos a ejecutar son:
 
 1. Desbloquear Jenkins:
@@ -61,13 +61,13 @@ cat /var/lib/jenkins/secrets/initialAdminPassword
 ```
 Luego, se debe copiar la clave en la página
 
-<img src="img/unlock_jenkins.png" alt="drawing" width="400" style="display:block;margin:auto"/>
+<img src="img/jenkins/unlock_jenkins.png" alt="drawing" width="400" style="display:block;margin:auto"/>
 
 2. Instalar plugins sugeridos
 
 Para acelerar la configuración, vamos a instalar algunos plugins que se utilizan comúnmente. 
 
-<img src="img/initial_plugins.png" alt="drawing" width="400" style="display:block;margin:auto"/>
+<img src="img/jenkins/initial_plugins.png" alt="drawing" width="400" style="display:block;margin:auto"/>
 
 3. Crear usuario administrador
 
@@ -85,7 +85,7 @@ Este usuario será utilizado para configurar los plugins posteriormente.
 Para poder enviar URL's para acceder a Jenkins (por ejemplo, para aprobar o rechazar un deploy), se debe configurar el URL bajo el cual corre el servidor. 
 
 
-<img src="img/initial_url.png" alt="drawing" width="400" style="display:block;margin:auto"/>
+<img src="img/jenkins/initial_url.png" alt="drawing" width="400" style="display:block;margin:auto"/>
 
 
 ## Plugins
@@ -99,15 +99,15 @@ Para instalarlos, vamos a Panel de Control > Administar Jenkins > Plugins y sele
 
 Luego, en el buscador, buscamos los plugins que deseamos instalar y los marcamos
 
-<img src="img/docker_search.png" alt="drawing" width="500" style="display:block;margin:auto"/>
+<img src="img/jenkins/docker_search.png" alt="drawing" width="500" style="display:block;margin:auto"/>
 
 Tocamos instalar y en la página de instalación, marcamos la opción para reiniciar el servidor luego de la instalación
 
 
-<img src="img/restart_after_install.png" alt="drawing" width="500" style="display:block;margin:auto"/>
+<img src="img/jenkins/restart_after_install.png" alt="drawing" width="500" style="display:block;margin:auto"/>
 
 
-## Credenciales
+## Configuración de credenciales
 
 Se deben configurar credenciales para:
 
@@ -117,9 +117,17 @@ Se deben configurar credenciales para:
 4. Utilizar los servicios de Azure
 5. Utilizar Jira 
 
+ Para eso, vamos a Panel de Control > Administrar Jenkins > Credentials > System > Global credentials (unrestricted). También se puede navegar directamente a 
+`<jenkins_url>/manage/credentials/store/system/domain/_/`
+
+<img src="img/jenkins/credentials.png" alt="drawing" width="500" style="display:block;margin:auto"/>
+
+
 ### Username-Password
 
-Para los casos de Github, emails, Slack y Jira, se debe configurar una credencial de tipo Username-Password. 
+Para los casos de Github, emails, Azure y Jira, se debe configurar una credencial de tipo Username-Password. Para eso, en el panel de credenciales, tocar el botón _Add Credentials_ y elegir la opción de _Username with password_ 
+
+<img src="img/jenkins/credentials_username_password.png" alt="drawing" width="500" style="display:block;margin:auto"/>
 
 
 #### Github
@@ -137,3 +145,91 @@ TODO
 
 
 ### Secret
+
+Para utilizar el servicio de Slack, se debe crear una credencial de tipo _Secret text_. Para eso, en el panel de credenciales, tocar el botón _Add Credentials_ y elegir la opción de _Secret text_
+
+<img src="img/jenkins/credentials_secret_text.png" alt="drawing" width="500" style="display:block;margin:auto"/>
+
+
+#### Slack
+
+Para obtener un token en Slack, vamos a configurar un workspace nuevo para el equipo de desarrollo. Para eso, se deben seguir los siguientes pasos:
+
+1. Crear un workspace en Slack
+2. Hacer un canal #deploy (que se usará para mandar las novedades del pipeline)
+3. Generar token del bot
+    1. Ir a https://api.slack.com/apps
+    2. Tocar el botón _Create an App_
+    <img src="img/jenkins/slack/create_app.png" alt="drawing" width="350" style="display:block;margin:auto"/>
+    3. Elegir la opción _From an app manifest_
+    <img src="img/jenkins/slack/from_manifest.png" alt="drawing" width="350" style="display:block;margin:auto"/>
+    4. Elegir el workspace creado 
+    <img src="img/jenkins/slack/workspace.png" alt="drawing" width="350" style="display:block;margin:auto"/>
+        5. Eliminar el contenido del yaml creado, elegir el formato yaml y copiar el siguiente contenido
+        ```yaml
+        display_information:
+          name: Jenkins
+        features:
+          bot_user:
+            display_name: Jenkins
+            always_online: true
+        oauth_config:
+          scopes:
+            bot:
+              - channels:read
+              - chat:write
+              - chat:write.customize
+              - files:write
+              - reactions:write
+              - users:read
+              - users:read.email
+              - groups:read
+        settings:
+          org_deploy_enabled: false
+          socket_mode_enabled: false
+          token_rotation_enabled: false
+        ```
+    5. Clickear _Next_ > _Create_ > _Install app to workspace_ > _Allow_
+    <img src="img/jenkins/slack/install.png" alt="drawing" width="350" style="display:block;margin:auto"/> 
+
+       <img src="img/jenkins/slack/allow.png" alt="drawing" width="350" style="display:block;margin:auto"/>
+    6. En la página de la aplicación, ir a _OAuth & Permissions_ y obtener el token que se utilizará para las credenciales
+    <img src="img/jenkins/slack/token.png" alt="drawing" width="350" style="display:block;margin:auto"/>  
+
+
+## Configuración de plugins
+
+Luego de instalar los plugins, se deben configurar para usar los servicios creados. Esto se puede hacer en Panel de Control > Administrar Jenkins > System, navegando a `<jenkins_url>/manage/configure`
+
+### Slack
+
+Lo primero que se debe hacer es agregar a la aplicación configurada previamente al canal #deploy. Para eso, hacer click en la configuración del canal, ir a _Integrations_ y clickear _Add apps_
+
+<img src="img/jenkins/slack/add_app.png" alt="drawing" width="300" style="display:block;margin:auto"/>  
+
+En la lista, elegir a la aplicación creada previamente. 
+
+Luego, en la configuración de Jenkins, ir a la sección de _Slack_ y
+ - Completar el campo _Workspace_ con el nombre del workspace utilizado. Por ejemplo, si es `jenkinstpredes.slack.com`, completar el campo con `jenkinstpredes`
+ - Elegir en el campo _Credential_ al id de la credencial para Slack creada anteriormente. 
+ - En el campo _Default channel / member id_, indicar el valor del canal a utilizar como defecto (en este caso, `#deploy`)
+ - Marcar la opción _Custom slack app bot user_
+    - Elegir el emoji como icono para el bot (puede ser `:robot_face:`)
+    - Elegir un username (como `Jenkins`)
+
+<img src="img/jenkins/slack/plugin.png" alt="drawing" width="500" style="display:block;margin:auto"/>  
+
+### Emails
+
+En primer lugar, en la sección de _Jenkins Location_, modificar el campo _System Admin e-mail address_ para personalizar el header _From_ de los emails enviados. 
+
+<img src="img/jenkins/email/from.png" alt="drawing" width="500" style="display:block;margin:auto"/>  
+
+Luego, ir a la sección de _Extended E-mail Notification_ y configurar
+
+- SMTP server: `smtp.gmail.com`
+- SMTP port: `465`
+
+Después, ir a _Avanzado_ y en el campo de credenciales, elegir el id de la credencial de email configurada previamente. También, marcar la opción de _Use SSL_.
+
+<img src="img/jenkins/email/extended.png" alt="drawing" width="500" style="display:block;margin:auto"/>  
