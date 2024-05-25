@@ -9,6 +9,12 @@ pipeline {
             filename 'Dockerfile'
         }
     }
+    environment {
+        JIRA_URL = 'https://redesjenkins.atlassian.net'
+        JIRA_KEY = 'KAN'
+        JIRA_ISSUE_TYPE_NAME = 'JenkinsError'
+        JIRA_CRED = credentials('jira-token')
+    }
     stages {
         stage('Build') {
             steps {
@@ -27,7 +33,8 @@ pipeline {
                 }
                 failure {
                     script {
-                        buildResponse.addReaction("x")    
+                        buildResponse.addReaction("x")
+                        sh '''curl -D- -u $JIRA_CRED -X POST --data '{ \"fields\": { \"project\": { \"key\": \"'$JIRA_KEY'\" }, \"summary\": \"Build failed: #'$BUILD_NUMBER'\", \"issuetype\": { \"name\": \"'$JIRA_ISSUE_TYPE_NAME'\" } } }' -H 'Content-Type: application/json' $JIRA_URL/rest/api/3/issue'''   
                     }
                 }
             }
@@ -38,6 +45,7 @@ pipeline {
                 echo 'With webhook'
                 script{
                     testResponse = slackSend (message: "Test stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+                    slackSend(channel: testResponse.threadId, message: "Thread reply #1")
                 }
                 sh 'npm run dev > /dev/null 2>&1 & api_pid=$!'
                 sh 'npm run test'
@@ -47,17 +55,13 @@ pipeline {
                     script {
                         junit skipPublishingChecks: true, testResults: 'junit.xml'
                         testResponse.addReaction("white_check_mark")
-                        withEnv(['JIRA_URL=https://redesjenkins.atlassian.net', 'JIRA_KEY=KAN', 'JIRA_ISSUE_TYPE_NAME=Error']) {
-                            withCredentials([usernamePassword(credentialsId: 'jira-token', passwordVariable: 'JIRA_TOKEN', usernameVariable: 'JIRA_USER')]) {
-                                sh '''curl -D- -u $JIRA_USER:$JIRA_TOKEN -X POST --data '{ \"fields\": { \"project\": { \"key\": \"$JIRA_KEY\" }, \"summary\": \"Bug from Jenkins\", \"issuetype\": { \"name\": \"$JIRA_ISSUE_TYPE_NAME\" } }  }' -H 'Content-Type: application/json' $JIRA_URL/rest/api/3/issue'''
-                            }
-                        }
                     }
                 }
                 failure {
                     script {
                         junit skipPublishingChecks: true, testResults: 'junit.xml' 
-                        testResponse.addReaction("x")    
+                        testResponse.addReaction("x") 
+                        sh '''curl -D- -u $JIRA_CRED -X POST --data '{ \"fields\": { \"project\": { \"key\": \"'$JIRA_KEY'\" }, \"summary\": \"Test failed: #'$BUILD_NUMBER'\", \"issuetype\": { \"name\": \"'$JIRA_ISSUE_TYPE_NAME'\" } } }' -H 'Content-Type: application/json' $JIRA_URL/rest/api/3/issue'''      
                     }
                 }
             }
@@ -109,7 +113,8 @@ pipeline {
                 }
                 failure {
                     script {
-                        deployResponse.addReaction("x")    
+                        deployResponse.addReaction("x")
+                        sh '''curl -D- -u $JIRA_CRED -X POST --data '{ \"fields\": { \"project\": { \"key\": \"'$JIRA_KEY'\" }, \"summary\": \"Deploy failed: #'$BUILD_NUMBER'\", \"issuetype\": { \"name\": \"'$JIRA_ISSUE_TYPE_NAME'\" } } }' -H 'Content-Type: application/json' $JIRA_URL/rest/api/3/issue'''    
                     }
                 }
                 aborted {
