@@ -5,6 +5,7 @@ def deployInput
 def developmentOutput
 def slackInit
 def deployResponse2
+def jiraFunctions = load "jira.groovy"
 
 pipeline {
     agent { 
@@ -43,7 +44,7 @@ pipeline {
                         buildResponse.addReaction("x")
                         slackInit.removeReaction("stopwatch")
                         slackInit.addReaction("x")
-                        sh '''curl -D- -u $JIRA_CRED -X POST --data '{ \"fields\": { \"project\": { \"key\": \"'$JIRA_KEY'\" }, \"summary\": \"Build failed: #'$BUILD_NUMBER'\", \"issuetype\": { \"name\": \"'$JIRA_ISSUE_TYPE_NAME'\" } } }' -H 'Content-Type: application/json' $JIRA_URL/rest/api/3/issue'''   
+                        jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Build failed: #'$BUILD_NUMBER'", env.BUILD_URL, "Jenkins build")
                     }
                 }
             }
@@ -69,7 +70,7 @@ pipeline {
                         testResponse.addReaction("x") 
                         slackInit.removeReaction("stopwatch")
                         slackInit.addReaction("x")
-                        sh '''curl -D- -u $JIRA_CRED -X POST --data '{ \"fields\": { \"project\": { \"key\": \"'$JIRA_KEY'\" }, \"summary\": \"Test failed: #'$BUILD_NUMBER'\", \"issuetype\": { \"name\": \"'$JIRA_ISSUE_TYPE_NAME'\" } } }' -H 'Content-Type: application/json' $JIRA_URL/rest/api/3/issue'''      
+                        jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Test failed: #'$BUILD_NUMBER'", env.BUILD_URL, "Jenkins test")
                     }
                 }
             }
@@ -126,7 +127,7 @@ pipeline {
                     script {
                         deployResponse.addReaction("x")
                         slackInit.addReaction("x")
-                        sh '''curl -D- -u $JIRA_CRED -X POST --data '{ \"fields\": { \"project\": { \"key\": \"'$JIRA_KEY'\" }, \"summary\": \"Deploy failed: #'$BUILD_NUMBER'\", \"issuetype\": { \"name\": \"'$JIRA_ISSUE_TYPE_NAME'\" } } }' -H 'Content-Type: application/json' $JIRA_URL/rest/api/3/issue''' 
+                        jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Deploy failed: #'$BUILD_NUMBER'", env.BUILD_URL, "Jenkins deploy")
                         deployResponse2.addReaction("x")   
                     }
                 }
