@@ -45,6 +45,7 @@ pipeline {
                 echo 'With webhook'
                 script{
                     testResponse = slackSend (message: "Test stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+                    slackSend(channel: testResponse.threadId, message: "Thread reply #1")
                 }
                 sh 'npm run dev > /dev/null 2>&1 & api_pid=$!'
                 sh 'npm run test'
