@@ -139,7 +139,9 @@ pipeline {
                     } 
                 }
                 always {
-                    slackInit.removeReaction("stopwatch")
+                    script {
+                        slackInit.removeReaction("stopwatch")
+                    }
                 }
             }            
         }
