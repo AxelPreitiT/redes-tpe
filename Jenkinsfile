@@ -3,6 +3,8 @@ def testResponse
 def deployResponse
 def deployInput
 def developmentOutput
+def slackInit
+
 pipeline {
     agent { 
         dockerfile {
@@ -18,9 +20,12 @@ pipeline {
     stages {
         stage('Build') {
             steps {
+                script{
+                    slackInit = slackSend(message: "Pipeline for ${env.JOB_name} ${env.BUILD_NUMBER} run. (<${env.BUILD_URL}|Open>).")
+                }
                 echo 'Building'
                 script {
-                    buildResponse = slackSend (message: "Build stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+                    buildResponse = slackSend (channel: slackInit.threadId, message: "Build stage started")
                 }
                 sh 'npm install'
                 sh 'npm run build'
@@ -34,6 +39,7 @@ pipeline {
                 failure {
                     script {
                         buildResponse.addReaction("x")
+                        slackInit.addReaction("x")
                         sh '''curl -D- -u $JIRA_CRED -X POST --data '{ \"fields\": { \"project\": { \"key\": \"'$JIRA_KEY'\" }, \"summary\": \"Build failed: #'$BUILD_NUMBER'\", \"issuetype\": { \"name\": \"'$JIRA_ISSUE_TYPE_NAME'\" } } }' -H 'Content-Type: application/json' $JIRA_URL/rest/api/3/issue'''   
                     }
                 }
@@ -44,8 +50,7 @@ pipeline {
                 echo 'Testing'
                 echo 'With webhook'
                 script{
-                    testResponse = slackSend (message: "Test stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
-                    slackSend(channel: testResponse.threadId, message: "Thread reply #1")
+                    testResponse = slackSend (channel: slackInit.threadId, message: "Test stage started")
                 }
                 sh 'npm run dev > /dev/null 2>&1 & api_pid=$!'
                 sh 'npm run test'
@@ -59,6 +64,7 @@ pipeline {
                 failure {
                     script {
                         testResponse.addReaction("x") 
+                        slackInit.addReaction("x")
                         sh '''curl -D- -u $JIRA_CRED -X POST --data '{ \"fields\": { \"project\": { \"key\": \"'$JIRA_KEY'\" }, \"summary\": \"Test failed: #'$BUILD_NUMBER'\", \"issuetype\": { \"name\": \"'$JIRA_ISSUE_TYPE_NAME'\" } } }' -H 'Content-Type: application/json' $JIRA_URL/rest/api/3/issue'''      
                     }
                 }
@@ -68,7 +74,7 @@ pipeline {
             steps {
                 echo 'Deploying'
                 script {
-                    deployResponse = slackSend (message: "Deploy stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+                    deployResponse = slackSend (channel: slackInit.threadId, message: "Deploy stage started")
                     withCredentials([usernamePassword(credentialsId: 'azure-jose', passwordVariable: 'AZURE_CLIENT_SECRET', usernameVariable: 'AZURE_CLIENT_ID')]) {
                             sh 'az login -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET > /dev/null'
                     }
@@ -106,18 +112,21 @@ pipeline {
             post {
                 success {
                     script {
+                        slackInit.addReaction("white_check_mark")    
                         deployResponse.addReaction("white_check_mark")       
                     }
                 }
                 failure {
                     script {
                         deployResponse.addReaction("x")
+                        slackInit.addReaction("x")
                         sh '''curl -D- -u $JIRA_CRED -X POST --data '{ \"fields\": { \"project\": { \"key\": \"'$JIRA_KEY'\" }, \"summary\": \"Deploy failed: #'$BUILD_NUMBER'\", \"issuetype\": { \"name\": \"'$JIRA_ISSUE_TYPE_NAME'\" } } }' -H 'Content-Type: application/json' $JIRA_URL/rest/api/3/issue'''    
                     }
                 }
                 aborted {
                     script {
-                        deployResponse.addReaction("no_entry")    
+                        deployResponse.addReaction("no_entry")
+                        slackInit.addReaction("no_entry")    
                     } 
                 }
             }            
