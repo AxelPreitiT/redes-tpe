@@ -69,7 +69,7 @@ pipeline {
                 script {
                     deployResponse = slackSend (message: "Deploy stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
                     withCredentials([usernamePassword(credentialsId: 'azure-jose', passwordVariable: 'AZURE_CLIENT_SECRET', usernameVariable: 'AZURE_CLIENT_ID')]) {
-                            sh 'az login -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET > /dev/null'
+                            sh 'az login -u $AZURE_CLIENT_ID $AZURE_CLIENT_SECRET > /dev/null'
                     }
                     sh 'npm run build'
                     sh 'cp -r .next/static .next/standalone/.next/static'
