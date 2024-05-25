@@ -4,6 +4,7 @@ def deployResponse
 def deployInput
 def developmentOutput
 def slackInit
+def deployResponse2
 
 pipeline {
     agent { 
@@ -22,6 +23,7 @@ pipeline {
             steps {
                 script{
                     slackInit = slackSend(message: "Pipeline for ${env.JOB_name} ${env.BUILD_NUMBER} run. (<${env.BUILD_URL}|Open>).")
+                    slackInit.addReaction("stopwatch")
                 }
                 echo 'Building'
                 script {
@@ -39,6 +41,7 @@ pipeline {
                 failure {
                     script {
                         buildResponse.addReaction("x")
+                        slackInit.removeReaction("stopwatch")
                         slackInit.addReaction("x")
                         sh '''curl -D- -u $JIRA_CRED -X POST --data '{ \"fields\": { \"project\": { \"key\": \"'$JIRA_KEY'\" }, \"summary\": \"Build failed: #'$BUILD_NUMBER'\", \"issuetype\": { \"name\": \"'$JIRA_ISSUE_TYPE_NAME'\" } } }' -H 'Content-Type: application/json' $JIRA_URL/rest/api/3/issue'''   
                     }
@@ -58,14 +61,13 @@ pipeline {
             post {
                 success {
                     script {
-                        junit skipPublishingChecks: true, testResults: 'junit.xml'
                         testResponse.addReaction("white_check_mark")
                     }
                 }
                 failure {
                     script {
-                        junit skipPublishingChecks: true, testResults: 'junit.xml' 
                         testResponse.addReaction("x") 
+                        slackInit.removeReaction("stopwatch")
                         slackInit.addReaction("x")
                         sh '''curl -D- -u $JIRA_CRED -X POST --data '{ \"fields\": { \"project\": { \"key\": \"'$JIRA_KEY'\" }, \"summary\": \"Test failed: #'$BUILD_NUMBER'\", \"issuetype\": { \"name\": \"'$JIRA_ISSUE_TYPE_NAME'\" } } }' -H 'Content-Type: application/json' $JIRA_URL/rest/api/3/issue'''      
                     }
@@ -98,12 +100,13 @@ pipeline {
                         }
                     }
                     echo "Development URL: ${developmentUrl}"
-                    slackSend (message: "Please visit Jenkins to authorize the ${env.JOB_NAME} ${env.BUILD_NUMBER} deployment (<${env.BUILD_URL}input|Open>). The development build is now deployed <${developmentUrl}|here>.")
+                    slackSend (channel: slackInit.threadId, message: "Please visit Jenkins to authorize the ${env.JOB_NAME} ${env.BUILD_NUMBER} deployment (<${env.BUILD_URL}input|Open>). The development build is now deployed <${developmentUrl}|here>.")
                     emailext mimeType: 'text/html',
                         subject: "[Jenkins]${currentBuild.fullDisplayName}",
                         to: "jmentasti@itba.edu.ar",
                         body: """<a href="${BUILD_URL}input">Click to review</a>. Test it on <a href="${developmentUrl}">the dev branch</a>."""
                     input id: 'Approve_deploy', message: "Are you sure you want to deploy the build?", ok: 'Deploy'
+                     def deployResponse2 = slackSend(channel: slackInit.threadId, message:"Deploying to prod environment")
                     withEnv(['RESOURCE_GROUP_NAME=Jenkins-Deployment',
                             'WEB_APP_NAME=redes-jenkins-deploy']) {
                         sh 'az webapp deploy --resource-group $RESOURCE_GROUP_NAME --name $WEB_APP_NAME --src-path deploy.zip --type zip --clean true'
@@ -114,21 +117,27 @@ pipeline {
             post {
                 success {
                     script {
+                        slackInit.removeReaction("stopwatch")
                         slackInit.addReaction("white_check_mark")    
-                        deployResponse.addReaction("white_check_mark")       
+                        deployResponse.addReaction("white_check_mark")
+                        deployResponse2.addReaction("white_check_mark")       
                     }
                 }
                 failure {
                     script {
+                        slackInit.removeReaction("stopwatch")
                         deployResponse.addReaction("x")
                         slackInit.addReaction("x")
-                        sh '''curl -D- -u $JIRA_CRED -X POST --data '{ \"fields\": { \"project\": { \"key\": \"'$JIRA_KEY'\" }, \"summary\": \"Deploy failed: #'$BUILD_NUMBER'\", \"issuetype\": { \"name\": \"'$JIRA_ISSUE_TYPE_NAME'\" } } }' -H 'Content-Type: application/json' $JIRA_URL/rest/api/3/issue'''    
+                        sh '''curl -D- -u $JIRA_CRED -X POST --data '{ \"fields\": { \"project\": { \"key\": \"'$JIRA_KEY'\" }, \"summary\": \"Deploy failed: #'$BUILD_NUMBER'\", \"issuetype\": { \"name\": \"'$JIRA_ISSUE_TYPE_NAME'\" } } }' -H 'Content-Type: application/json' $JIRA_URL/rest/api/3/issue''' 
+                        deployResponse2.addReaction("x")   
                     }
                 }
                 aborted {
                     script {
+                        slackInit.removeReaction("stopwatch")
                         deployResponse.addReaction("no_entry")
-                        slackInit.addReaction("no_entry")    
+                        slackInit.addReaction("no_entry")  
+                        deployResponse2.addReaction("no_entry")     
                     } 
                 }
             }            
