@@ -1,7 +1,7 @@
 def slackInit
 def slackBuild
 def slackTest
-def jiraFunctions = load 'jira.groovy'
+def jiraFunctions
 
 pipeline {
     agent {
@@ -19,6 +19,7 @@ pipeline {
         stage('Build') {
             steps {
                 script {
+                    jiraFunctions = load "jira.groovy"
                     slackInit = slackSend(message: "Pipeline for Pull Request #$CHANGE_ID run. Review it on GitHub.")
                     slackInit.addReaction("stopwatch")
                     slackBuild = slackSend(channel: slackInit.threadId, message: "Build stage")

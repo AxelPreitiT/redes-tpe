@@ -5,7 +5,7 @@ def deployInput
 def developmentOutput
 def slackInit
 def deployResponse2
-def jiraFunctions = load "jira.groovy"
+def jiraFunctions
 
 pipeline {
     agent { 
@@ -23,6 +23,7 @@ pipeline {
         stage('Build') {
             steps {
                 script{
+                    jiraFunctions = load "jira.groovy"
                     slackInit = slackSend(message: "Pipeline for ${env.JOB_name} ${env.BUILD_NUMBER} run. (<${env.BUILD_URL}|Open>).")
                     slackInit.addReaction("stopwatch")
                 }
