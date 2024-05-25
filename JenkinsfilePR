@@ -28,12 +28,16 @@ pipeline {
             }
             post{
                 success{
-                    slackBuild.addReaction("white_check_mark")
+                    script {
+                        slackBuild.addReaction("white_check_mark")
+                    }
                 }
                 failure{
-                    slackInit.removeReaction("stopwatch")
-                    slackBuild.addReaction("x")
-                    slackResponse.addReaction("x")
+                    script {
+                        slackInit.removeReaction("stopwatch")
+                        slackBuild.addReaction("x")
+                        slackResponse.addReaction("x")
+                    }
                 }
             }
         }
