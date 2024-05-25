@@ -43,7 +43,9 @@ pipeline {
         }
         stage('Test') {
             steps {
-                slackTest = slackSend(channel: slackResponse.threadId, message: "Testing Pull Request")
+                script {
+                    slackTest = slackSend(channel: slackResponse.threadId, message: "Testing Pull Request")
+                }
                 echo 'Testing'
                 echo 'With webhook'
                 sh 'npm run dev > /dev/null 2>&1 & api_pid=$!'
