@@ -106,7 +106,7 @@ pipeline {
                         to: "jmentasti@itba.edu.ar",
                         body: """<a href="${BUILD_URL}input">Click to review</a>. Test it on <a href="${developmentUrl}">the dev branch</a>."""
                     input id: 'Approve_deploy', message: "Are you sure you want to deploy the build?", ok: 'Deploy'
-                     def deployResponse2 = slackSend(channel: slackInit.threadId, message:"Deploying to prod environment")
+                    deployResponse2 = slackSend(channel: slackInit.threadId, message:"Deploying to prod environment")
                     withEnv(['RESOURCE_GROUP_NAME=Jenkins-Deployment',
                             'WEB_APP_NAME=redes-jenkins-deploy']) {
                         sh 'az webapp deploy --resource-group $RESOURCE_GROUP_NAME --name $WEB_APP_NAME --src-path deploy.zip --type zip --clean true'
