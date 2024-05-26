@@ -74,6 +74,9 @@ pipeline {
                         jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Test failed: #'$BUILD_NUMBER'", env.BUILD_URL, "Jenkins build")
                     }
                 }
+                always{
+                    junit testResults: 'junit.xml'
+                }
             }
         }
         stage('Deploy') {
