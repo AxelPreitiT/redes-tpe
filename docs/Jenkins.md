@@ -91,6 +91,7 @@ Además de los plugins comunes que se instalaron anteriormente, Jenkins ofrece u
 
 - [Slack Notification](https://plugins.jenkins.io/slack/)
 - [Docker Pipeline](https://plugins.jenkins.io/docker-workflow/)
+- [Jira](https://plugins.jenkins.io/jira/)
 
 
 Para instalarlos, vamos a Panel de Control > Administar Jenkins > Plugins y seleccionamos la opción de en  _Available plugins_ . También se puede navegar directamente a `<jenkins_url>/manage/pluginManager/available`
@@ -150,7 +151,13 @@ Para el servicio de emails, se puede utilizar una cuenta de Gmail, pero en las c
 
 #### Jira
 
-TODO
+Para utilizar el plugin de Jira, es necesario crear un API Token para un workspace. Para eso:
+1. Crear un workspace en Jira
+2. Ir a https://id.atlassian.com/manage-profile/security/api-tokens 
+3. Hacer click en _Crear Api Token_, asignarle un identificador y copiar el token generado (no se va a volver a mostrar)
+4. Crear una credencial donde
+    - username: email de quien creó el token
+    - password: api token  
 
 
 ### Secret
@@ -243,6 +250,16 @@ Después, ir a _Avanzado_ y en el campo de credenciales, elegir el id de la cred
 
 <img src="img/jenkins/email/extended.png" alt="drawing" width="500" style="display:block;margin:auto"/>  
 
+
+### Jira
+
+En la sección de _Jira_
+
+1. Hacer click en el botón _Añadir_
+2. Agregar la URL del workspace en el campo _URL_
+3. En _Credentials_, elegir las credenciales creadas [anteriormente](Jenkins.md#jira)
+
+Para poder crear Issues de tipo error en el workspace de Jira, ir a Jira > Tipos de Incidencias > Añadir tipo de incidencia > Crear tipo de incidencia > Nombre: `JenkinsError`
 
 ## Opcional: Configuración de Nodos
 
