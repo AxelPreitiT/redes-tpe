@@ -90,18 +90,9 @@ pipeline {
                 script {
                     deployResponse = slackSend (channel: slackInit.threadId, message: "Dev deploy stage started")
                     deployResponse.addReaction("stopwatch")
-                    // Separate function
-                    // withCredentials([usernamePassword(credentialsId: 'azure-jose', passwordVariable: 'AZURE_CLIENT_SECRET', usernameVariable: 'AZURE_CLIENT_ID')]) {
-                        //    sh 'az login -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET > /dev/null'
-                    // }
-                    // sh 'npm run build'
-                    // sh 'cp -r .next/static .next/standalone/.next/static'
-                    // sh 'cp -r public .next/standalone/public'
-                    // sh 'zip deploy .next -qr'
                     withEnv(['RESOURCE_GROUP_NAME=redes-jenkins-development_group',
                             'WEB_APP_NAME=redes-jenkins-development']) {
-                        developmentOutput = deployFunctions.deploy($RESOURCE_GROUP_NAME, $WEB_APP_NAME, $AZURE_CRED_USR, $AZURE_CRED_PSW)    
-                        // developmentOutput = sh script: 'az webapp deploy --resource-group $RESOURCE_GROUP_NAME --name $WEB_APP_NAME --src-path deploy.zip --type zip --clean true 2>&1', returnStdout: true
+                        developmentOutput = deployFunctions.deploy(RESOURCE_GROUP_NAME, WEB_APP_NAME, AZURE_CRED_USR, AZURE_CRED_PSW)    
                     }
                     echo "Command Output: ${developmentOutput}"
                     def urlLine = developmentOutput.readLines().find { it.contains("WARNING: You can visit your app at:") }
@@ -114,8 +105,7 @@ pipeline {
                     }
                     echo "Development URL: ${developmentUrl}"
                     slackSend (channel: slackInit.threadId, message: "Please visit Jenkins to authorize the ${env.JOB_NAME} <${env.BUILD_URL}input|#${env.BUILD_NUMBER}> production deployment. The development build is now deployed <${developmentUrl}|here>.")
-                    // Send email
-                    mailFunctions.sendEmail(developmentUrl, "${BUILD_URL}input", env.BUILD_NUMBER, "[Jenkins]${currentBuild.fullDisplayName}", DEFAULT_RECIPIENTS)
+                    mailFunctions.sendEmail(developmentUrl, "${BUILD_URL}input", env.BUILD_NUMBER, "[Jenkins] Pipeline #${env.BUILD_NUMBER}") 
                     input id: 'Approve_deploy', message: "Are you sure you want to deploy the build?", ok: 'Deploy'
                 }
             }
@@ -153,18 +143,9 @@ pipeline {
                 script {
                     deployResponse2 = slackSend (channel: slackInit.threadId, message: "Prod deploy stage started")
                     deployResponse2.addReaction("stopwatch")
-                    // Separate function
-                    // withCredentials([usernamePassword(credentialsId: 'azure-jose', passwordVariable: 'AZURE_CLIENT_SECRET', usernameVariable: 'AZURE_CLIENT_ID')]) {
-                        //    sh 'az login -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET > /dev/null'
-                    // }
-                    // sh 'npm run build'
-                    // sh 'cp -r .next/static .next/standalone/.next/static'
-                    // sh 'cp -r public .next/standalone/public'
-                    // sh 'zip deploy .next -qr'
                     withEnv(['RESOURCE_GROUP_NAME=Jenkins-Deployment',
                             'WEB_APP_NAME=redes-jenkins-deploy']) {
-                        deployFunctions.deploy($RESOURCE_GROUP_NAME, $WEB_APP_NAME, $AZURE_CRED_USR, $AZURE_CRED_PSW)
-                        // sh 'az webapp deploy --resource-group $RESOURCE_GROUP_NAME --name $WEB_APP_NAME --src-path deploy.zip --type zip --clean true'
+                        deployFunctions.deploy(RESOURCE_GROUP_NAME, WEB_APP_NAME, AZURE_CRED_USR, AZURE_CRED_PSW)
                     }
                     echo "Deployed"
                 }
