@@ -34,7 +34,7 @@ pipeline {
             post{
                 success{
                     script {
-                        jiraFunctions.addJiraComment("Build success", jiraKey)
+                        jiraFunctions.createJiraIssueWithComment(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Pull Request opened: #$CHANGE_ID", "https://github.com/AxelPreitiT/redes-tpe/pull/$CHANGE_ID", "Pull Request #$CHANGE_ID", "Build success")
                         slackBuild.addReaction("white_check_mark")
                     }
                 }
