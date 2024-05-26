@@ -24,7 +24,7 @@ pipeline {
             steps {
                 script{
                     jiraFunctions = load "jira.groovy"
-                    slackInit = slackSend(message: "Pipeline for ${env.JOB_name} ${env.BUILD_NUMBER} run. (<${env.BUILD_URL}|Open>).")
+                    slackInit = slackSend(message: "Pipeline for ${env.JOB_name} <${env.BUILD_URL}|#${env.BUILD_NUMBER}> started")
                     slackInit.addReaction("stopwatch")
                 }
                 echo 'Building'
@@ -83,7 +83,7 @@ pipeline {
             steps {
                 echo 'Deploying'
                 script {
-                    deployResponse = slackSend (channel: slackInit.threadId, message: "Deploy stage started")
+                    deployResponse = slackSend (channel: slackInit.threadId, message: "Dev deploy stage started")
                     withCredentials([usernamePassword(credentialsId: 'azure-jose', passwordVariable: 'AZURE_CLIENT_SECRET', usernameVariable: 'AZURE_CLIENT_ID')]) {
                             sh 'az login -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET > /dev/null'
                     }
@@ -105,7 +105,7 @@ pipeline {
                         }
                     }
                     echo "Development URL: ${developmentUrl}"
-                    slackSend (channel: slackInit.threadId, message: "Please visit Jenkins to authorize the ${env.JOB_NAME} ${env.BUILD_NUMBER} deployment (<${env.BUILD_URL}input|Open>). The development build is now deployed <${developmentUrl}|here>.")
+                    slackSend (channel: slackInit.threadId, message: "Please visit Jenkins to authorize the ${env.JOB_NAME} <${env.BUILD_URL}input|#${env.BUILD_NUMBER}> production deployment. The development build is now deployed <${developmentUrl}|here>.")
                     emailext mimeType: 'text/html',
                         subject: "[Jenkins]${currentBuild.fullDisplayName}",
                         to: "${DEFAULT_RECIPIENTS}",
@@ -133,7 +133,7 @@ pipeline {
                         </div>
                         """
                     input id: 'Approve_deploy', message: "Are you sure you want to deploy the build?", ok: 'Deploy'
-                    deployResponse2 = slackSend(channel: slackInit.threadId, message:"Deploying to prod environment")
+                    deployResponse2 = slackSend(channel: slackInit.threadId, message:"Prod deploy stage started")
                     withEnv(['RESOURCE_GROUP_NAME=Jenkins-Deployment',
                             'WEB_APP_NAME=redes-jenkins-deploy']) {
                         sh 'az webapp deploy --resource-group $RESOURCE_GROUP_NAME --name $WEB_APP_NAME --src-path deploy.zip --type zip --clean true'
