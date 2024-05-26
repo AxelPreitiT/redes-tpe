@@ -111,21 +111,20 @@ pipeline {
                         to: "gfrancois@itba.edu.ar",
                         body: """
                         <div style="text-align: center;">
-                            <img style="display: block; margin-left: auto; margin-right: auto;" src="https://upload.wikimedia.org/wikipedia/commons/thumb/e/e3/Jenkins_logo_with_title.svg/2560px-Jenkins_logo_with_title.svg.png" alt="Archivo:Jenkins logo with title.svg - Wikipedia, la enciclopedia libre" width="363" height="117">
-                            <br>
+                            <img src="https://testeandosoftware.com/wp-content/uploads/2015/01/jenkins_logo.png" alt="Jenkins. Servidor de integración continua gratuito - Testeando Software">                            <br>
                             <span style="font-size: 18pt;">
                                 <strong>¡Tienes una nueva aprobación pendiente!</strong>
                             </span>
                             <br>
-                            <br>Para abortar o aceptar el deployment ${env.BUILD_NUMBER} por favor haz click en el boton "Aprobar/Abortar" debajo.
+                            <br>Para abortar o aceptar el deployment #${env.BUILD_NUMBER} por favor haz click en el boton "Aprobar/Abortar" debajo.
                             <br>
                             <br>Si previamente prefieres revisar el build puedes revisarlo mediante el boton "Development build".
                             <br>
                             <br>
                             <br>
                             <div style="display: flex; justify-content: center; gap: 20px;">
-                                <a href="${BUILD_URL}input" target="_blank" class="cloudHQ__gmail_elements_final_btn" style="background-color: #d33834; color: #ffffff; border: 4px solid #6d6b6d; border-radius: 15px; box-sizing: border-box; font-size: 13px; font-weight: bold; line-height: 35px; padding: 6px 12px; text-align: center; text-decoration: none; text-transform: uppercase; vertical-align: middle;" rel="noopener">Aprobar/Abortar</a>
-                                <a href="${developmentUrl}" target="_blank" class="cloudHQ__gmail_elements_final_btn" style="background-color: #d33834; color: #ffffff; border: 4px solid #6d6b6d; border-radius: 15px; box-sizing: border-box; font-size: 13px; font-weight: bold; line-height: 35px; padding: 6px 12px; text-align: center; text-decoration: none; text-transform: uppercase; vertical-align: middle;" rel="noopener">Development build</a>
+                                <a href="${BUILD_URL}input" target="_blank" class="cloudHQ__gmail_elements_final_btn" style="background-color: #d33834; color: #ffffff; border: 4px solid #6d6b6d; border-radius: 15px; box-sizing: border-box; font-size: 13px; font-weight: bold; line-height: 25px; padding: 6px 12px; text-align: center; text-decoration: none; text-transform: uppercase; vertical-align: middle;" rel="noopener">Aprobar/Abortar</a>
+                                <a href="${developmentUrl}" target="_blank" class="cloudHQ__gmail_elements_final_btn" style="background-color: #d33834; color: #ffffff; border: 4px solid #6d6b6d; border-radius: 15px; box-sizing: border-box; font-size: 13px; font-weight: bold; line-height: 25px; padding: 6px 12px; text-align: center; text-decoration: none; text-transform: uppercase; vertical-align: middle;" rel="noopener">Development build</a>
                             </div>
                             <br>
                             <br>
