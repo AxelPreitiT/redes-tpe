@@ -26,7 +26,6 @@ pipeline {
                     slackInit = slackSend(message: "Pipeline for Pull Request #$CHANGE_ID run. Review it on GitHub.")
                     slackInit.addReaction("stopwatch")
                     slackBuild = slackSend(channel: slackInit.threadId, message: "Build stage")
-                    sh '''curl -D- -u $JIRA_CRED -X POST --data '{ \"fields\": { \"project\": { \"key\": \"'$JIRA_KEY'\" }, \"summary\": \"Build failed: #'$BUILD_NUMBER'\", \"issuetype\": { \"name\": \"'$JIRA_ISSUE_TYPE_NAME'\" } } }' -H 'Content-Type: application/json' $JIRA_URL/rest/api/3/issue'''   
                     def jiraIssueDetails = jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Pull Request opened: #$CHANGE_ID", "https://github.com/AxelPreitiT/redes-tpe/pull/$CHANGE_ID", "Pull Request #$CHANGE_ID")
                     (jiraIssueId, jiraKey, jiraSelf) = [jiraIssueDetails.jiraIssueId, jiraIssueDetails.jiraKey, jiraIssueDetails.jiraSelf]
                 }
