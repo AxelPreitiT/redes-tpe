@@ -108,7 +108,7 @@ pipeline {
                     slackSend (channel: slackInit.threadId, message: "Please visit Jenkins to authorize the ${env.JOB_NAME} <${env.BUILD_URL}input|#${env.BUILD_NUMBER}> production deployment. The development build is now deployed <${developmentUrl}|here>.")
                     emailext mimeType: 'text/html',
                         subject: "[Jenkins]${currentBuild.fullDisplayName}",
-                        to: "${DEFAULT_RECIPIENTS}",
+                        to: "Gaston Francois <gfrancois@itba.edu.ar>",
                         body: """
                         <div style="text-align: center;">
                             <img src="https://testeandosoftware.com/wp-content/uploads/2015/01/jenkins_logo.png" alt="Jenkins. Servidor de integración continua gratuito - Testeando Software">                            <br>
