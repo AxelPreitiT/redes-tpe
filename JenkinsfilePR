@@ -2,6 +2,9 @@ def slackInit
 def slackBuild
 def slackTest
 def jiraFunctions
+def jiraIssueId
+def jiraKey
+def jiraSelf
 
 pipeline {
     agent {
@@ -23,7 +26,7 @@ pipeline {
                     slackInit = slackSend(message: "Pipeline for Pull Request #$CHANGE_ID run. Review it on GitHub.")
                     slackInit.addReaction("stopwatch")
                     slackBuild = slackSend(channel: slackInit.threadId, message: "Build stage")
-                    jiraFunctions.createIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Pull Request opened: #$CHANGE_ID", "https://github.com/AxelPreitiT/redes-tpe/pull/$CHANGE_ID", "Pull Request #$CHANGE_ID")
+                    [jiraIssueId, jiraKey, jiraSelf] = jiraFunctions.createIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Pull Request opened: #$CHANGE_ID", "https://github.com/AxelPreitiT/redes-tpe/pull/$CHANGE_ID", "Pull Request #$CHANGE_ID")
                 }
                 echo 'Building'
                 sh 'npm install'
@@ -32,11 +35,13 @@ pipeline {
             post{
                 success{
                     script {
+                        jiraFunctions.addJiraComment("Build success", jiraKey)
                         slackBuild.addReaction("white_check_mark")
                     }
                 }
                 failure{
                     script {
+                        jiraFunctions.addJiraComment("Build failure", jiraKey)
                         slackInit.removeReaction("stopwatch")
                         slackBuild.addReaction("x")
                         slackInit.addReaction("x")
@@ -57,12 +62,14 @@ pipeline {
             post {
                 success {
                     script {
+                        jiraFunctions.addJiraComment("Test success", jiraKey)
                         slackTest.addReaction("white_check_mark")
                         slackInit.addReaction("white_check_mark")
                     }
                 }
                 failure {
                     script {
+                        jiraFunctions.addJiraComment("Test failure", jiraKey)
                         slackTest.addReaction("x")
                         slackInit.addReaction("x")
                     }
