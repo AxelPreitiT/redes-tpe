@@ -2,8 +2,6 @@
 
 Para poder ejecutar un pipeline de Jenkins es necesario configurar un servidor Jenkins, donde se van a ejecutar los pasos del Jenkinsfile. 
 
-### TODO: cambiar si agregamos un slave para ejecutar los pasos
-
 ## Instalación
 Se utilizará una VM con Ubuntu Server en la versión [22.04.4 LTS](https://releases.ubuntu.com/jammy/), y se recomienda una VM con al menos 2 vCUP y 4 GiB de RAM para correr los trabajos. Para poder tener una IP pública (necesario para utilizar webhooks para iniciar los pipelines), se utilizó el servicio de Azure VM's para crear las VM's necesarias (pudiendo cambiarse por otros servicios como AWS EC2). 
 
@@ -244,3 +242,109 @@ Luego, ir a la sección de _Extended E-mail Notification_ y configurar
 Después, ir a _Avanzado_ y en el campo de credenciales, elegir el id de la credencial de email configurada [previamente](Jenkins.md#emails). También, marcar la opción de _Use SSL_.
 
 <img src="img/jenkins/email/extended.png" alt="drawing" width="500" style="display:block;margin:auto"/>  
+
+
+## Opcional: Configuración de Nodos
+
+Una de las ventajas que ofrece Jenkins es la posibilidad de escalar horizontalmente, teniendo un controlador que distribuye tareas en nodos para su procesamiento. A continuación, se muestran los pasos para crear un nodo y asociarlo al controlador de Jenkins creado. 
+
+> [!NOTE]
+> No es necesario configurar builds distribuidos para utilizar Jenkins, los pipelines pueden ser ejecutados por el controlador. 
+
+Para la demostración, nuevamente se utilizará una VM con Ubuntu Server en la versión [22.04.4 LTS](https://releases.ubuntu.com/jammy/), y se recomienda una VM con al menos 2 vCUP y 4 GiB de RAM para correr los trabajos. 
+
+Para empezar, en la VM del controlador:
+1. Ir a Panel de Control > Administrar Jenkins > nodos (o navegar a `<jenkins_url>/manage/computer/`) y hacer click en _New Node_.
+
+<img src="img/jenkins/agent/new_node.png" alt="drawing" width="500" style="display:block;margin:auto"/> 
+
+2. Elegir un nombre para el nodo y seleccionar la opción de _Permanent Agent_. Luego, hacer click en el botón _Create_.
+
+<img src="img/jenkins/agent/node_name.png" alt="drawing" width="500" style="display:block;margin:auto"/> 
+
+3. En la pantalla de detalles
+    1. Especificar una descripción para el nodo
+    2. Especificar el número de ejecutores en el nodo, donde un valor inicial recomendado es la cantidad de cores disponibles.
+    3. En _Directorio raíz remoto_, indicar el directorio en donde se quiere instalar el controlador (en este caso, `/home/jenkins`)
+    4. Para _Usar_, elegir la opción de _Utilizar este nodo tanto como sea posible_
+    5. Para _Metodo de ejeución_, elegir la opción de _Launch agent by connecting it to the controller_
+
+<img src="img/jenkins/agent/node_details.png" alt="drawing" width="500" style="display:block;margin:auto"/> 
+
+4. Hacer click en _Guardar_ y entrar al nodo recién agregado
+
+<img src="img/jenkins/agent/node_list.png" alt="drawing" width="500" style="display:block;margin:auto"/> 
+
+5. Guardar los comandos en la opción de _Run from agent command line (Unix)_, lo vamos a usar luego.  
+
+<img src="img/jenkins/agent/node_url.png" alt="drawing" width="500" style="display:block;margin:auto"/> 
+
+6. Habilitar que Jenkins utilice un puerto para comunicarse con el agente, en Panel de Control > Administrar Jenkins > Security (o navegando a `<jenkins_url>/manage/configureSecurity/`) y seleccionando _Fijo_ o _Aleatorio_ en la sección de _Agents_
+
+<img src="img/jenkins/agent/security.png" alt="drawing" width="500" style="display:block;margin:auto"/> 
+
+> [!WARNING]
+> Se recomienda actualizar las reglas de seguridad para permitir conexiones entrantes y salientes al agente y nodo para lo configurado en el paso 6. Se puede habilitar las conexiones para IP's dentro de la LAN privada de las VM's para simplificar la configuración. 
+
+
+Luego, en la VM para el nodo:
+1. Instalar Java y Docker, como se muestra en [estos pasos](Jenkins.md#instalación).
+2. Crear un usuario para el agente, al que se le van a dar los privilegios necesarios para correr los pipelines.
+    ```bash
+    sudo useradd -m -d /home/jenkins -s /bin/bash jenkins
+    ```
+3. Dejar que el nuevo usuario pueda correr Docker
+    ```bash
+    sudo usermod -aG docker jenkins
+    ```
+4. Descargar el `jar` para el agente
+    ```bash
+    curl -sO <jenkins_url>/jnlpJars/agent.jar
+    ```
+    Este es el primer comando del paso 5
+5. Crear un directorio para el servicio
+    ```bash
+    sudo mkdir -p /usr/local/jenkins-service
+    ```
+6. Mover el agente a ese directorio
+    ```bash
+    sudo mv agent.jar /usr/local/jenkins-service
+    ```
+7. En el directorio, crear el archivo `start-agent.sh` y agregarle el siguiente contenido, que se va a utilizar para levantar el servicio
+    ```bash
+    #!/bin/bash
+    cd /usr/local/jenkins-service
+    curl -sO <jenkins_url>/jnlpJars/agent.jar
+    # curl -sO http://10.0.0.5:8080/jnlpJars/agent.jar
+    java -jar agent.jar -url <jenkins_url> -secret 
+    # java -jar agent.jar -url http://10.0.0.5:8080/ -secret ... -name Node1 -workDir "/home/jenkins"
+    <my_secret> -name Node1 -workDir "/home/jenkins"
+    exit 0
+    ```
+    Donde las líneas 3 y 5 son las obtenidas en el paso y de la configuración del controlador (pudiendo cambiar el host para usar IP's privadas)
+8. Darle permisos de ejecución al archivo
+      ```bash
+      sudo chmod +x start-agent.sh 
+      ```
+9. Crear el archivo `/etc/systemd/system/jenkins-agent.service` y agregarle el siguiente contenido
+    ```bash
+    [Unit]
+    Description=Jenkins Agent
+
+    [Service]
+    User=jenkins
+    WorkingDirectory=/home/jenkins
+    ExecStart=/bin/bash /usr/local/jenkins-service/start-agent.sh
+    Restart=always
+
+    [Install]
+    WantedBy=multi-user.target
+    ```
+10. Habilitar al servicio para correr cuando se inicia la VM
+    ```bash
+    sudo systemctl enable jenkins-agent.service
+    ```
+11. Iniciar el servicio
+    ```bash
+    sudo systemctl start jenkins-agent.service
+    ```
