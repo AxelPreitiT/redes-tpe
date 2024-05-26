@@ -42,6 +42,7 @@ pipeline {
                 }
                 failure{
                     script {
+                        
                         //jiraFunctions.createJiraIssueWithComment(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Pull Request opened: #$CHANGE_ID", "https://github.com/AxelPreitiT/redes-tpe/pull/$CHANGE_ID", "Pull Request #$CHANGE_ID", "Build failure")
                         slackInit.removeReaction("stopwatch")
                         slackBuild.addReaction("x")
@@ -63,6 +64,7 @@ pipeline {
             post {
                 success {
                     script {
+                        jiraFunctions.commentJiraIssue("Test success", jiraKey)
                         //jiraFunctions.createJiraIssueWithComment(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Pull Request opened: #$CHANGE_ID", "https://github.com/AxelPreitiT/redes-tpe/pull/$CHANGE_ID", "Pull Request #$CHANGE_ID", "Test success")
                         slackTest.addReaction("white_check_mark")
                         slackInit.addReaction("white_check_mark")
