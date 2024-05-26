@@ -33,7 +33,7 @@ pipeline {
                 }
                 sh 'npm install'
                 sh 'npm run build'
-                stash includes:'*' name'build':
+                stash includes:'*' name:'build'
             }
             post {
                 success {
