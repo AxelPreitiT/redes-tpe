@@ -1,5 +1,5 @@
 def createJiraIssue(url, key, issueTypeName, creds, title, link, linkTitle) {
-    def jiraResponse = sh(script: 'curl -D- -u ' + creds + ' -X POST --data \'{ "fields": { "project": { "key": "' + key + '", "summary": "' + title + '", "issuetype": { "name": "' + issueTypeName + '" } } }\' -H \'Content-Type: application/json\' ' + url + '/rest/api/3/issue', returnStdout: true).trim()
+    def jiraResponse = sh(script: 'curl -D- -u ' + creds + ' -X POST --data \'{ "fields": { "project": { "key": "' + key + '"}, "summary": "' + title + '", "issuetype": { "name": "' + issueTypeName + '" } } }\' -H \'Content-Type: application/json\' ' + url + '/rest/api/3/issue', returnStdout: true).trim()
 
     def jiraIssueId = (jiraResponse =~ /"id":"([^\s"]+)"/)[0][1]
     def jiraKey = (jiraResponse =~ /"key":"([^\s"]+)"/)[0][1]

@@ -63,6 +63,7 @@ pipeline {
             post {
                 success {
                     script {
+                        jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Test success: #'$BUILD_NUMBER'", env.BUILD_URL, "Jenkins build")
                         testResponse.addReaction("white_check_mark")
                     }
                 }
