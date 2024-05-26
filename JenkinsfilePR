@@ -26,8 +26,6 @@ pipeline {
                     slackInit = slackSend(message: "Pipeline for Pull Request #$CHANGE_ID run. Review it on GitHub.")
                     slackInit.addReaction("stopwatch")
                     slackBuild = slackSend(channel: slackInit.threadId, message: "Build stage")
-                    def jiraIssueDetails = jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Pull Request opened: #$CHANGE_ID", "https://github.com/AxelPreitiT/redes-tpe/pull/$CHANGE_ID", "Pull Request #$CHANGE_ID")
-                    (jiraIssueId, jiraKey, jiraSelf) = [jiraIssueDetails.jiraIssueId, jiraIssueDetails.jiraKey, jiraIssueDetails.jiraSelf]
                 }
                 echo 'Building'
                 sh 'npm install'
@@ -42,7 +40,7 @@ pipeline {
                 }
                 failure{
                     script {
-                        jiraFunctions.addJiraComment("Build failure", jiraKey)
+                        jiraFunctions.createJiraIssueWithComment(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Pull Request opened: #$CHANGE_ID", "https://github.com/AxelPreitiT/redes-tpe/pull/$CHANGE_ID", "Pull Request #$CHANGE_ID", "Build failure")
                         slackInit.removeReaction("stopwatch")
                         slackBuild.addReaction("x")
                         slackInit.addReaction("x")
@@ -63,14 +61,14 @@ pipeline {
             post {
                 success {
                     script {
-                        jiraFunctions.addJiraComment("Test success", jiraKey)
+                        jiraFunctions.createJiraIssueWithComment(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Pull Request opened: #$CHANGE_ID", "https://github.com/AxelPreitiT/redes-tpe/pull/$CHANGE_ID", "Pull Request #$CHANGE_ID", "Test success")
                         slackTest.addReaction("white_check_mark")
                         slackInit.addReaction("white_check_mark")
                     }
                 }
                 failure {
                     script {
-                        jiraFunctions.addJiraComment("Test failure", jiraKey)
+                        jiraFunctions.createJiraIssueWithComment(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Pull Request opened: #$CHANGE_ID", "https://github.com/AxelPreitiT/redes-tpe/pull/$CHANGE_ID", "Pull Request #$CHANGE_ID", "Test failure")
                         slackTest.addReaction("x")
                         slackInit.addReaction("x")
                     }
