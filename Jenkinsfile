@@ -122,7 +122,7 @@ pipeline {
                             <br>
                             <br>
                             <br>
-                            <div style="display: flex; justify-content: center; gap: 20px;">
+                            <div>
                                 <a href="${BUILD_URL}input" target="_blank" class="cloudHQ__gmail_elements_final_btn" style="background-color: #d33834; color: #ffffff; border: 4px solid #6d6b6d; border-radius: 15px; box-sizing: border-box; font-size: 13px; font-weight: bold; line-height: 25px; padding: 6px 12px; text-align: center; text-decoration: none; text-transform: uppercase; vertical-align: middle;" rel="noopener">Aprobar/Abortar</a>
                                 <a href="${developmentUrl}" target="_blank" class="cloudHQ__gmail_elements_final_btn" style="background-color: #d33834; color: #ffffff; border: 4px solid #6d6b6d; border-radius: 15px; box-sizing: border-box; font-size: 13px; font-weight: bold; line-height: 25px; padding: 6px 12px; text-align: center; text-decoration: none; text-transform: uppercase; vertical-align: middle;" rel="noopener">Development build</a>
                             </div>
