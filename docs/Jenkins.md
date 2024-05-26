@@ -222,7 +222,7 @@ En la lista, elegir a la aplicación creada previamente.
 
 Luego, en la configuración de Jenkins, ir a la sección de _Slack_ y
  - Completar el campo _Workspace_ con el nombre del workspace utilizado. Por ejemplo, si es `jenkinstpredes.slack.com`, completar el campo con `jenkinstpredes`
- - Elegir en el campo _Credential_ al id de la credencial para Slack creada anteriormente. 
+ - Elegir en el campo _Credential_ al id de la credencial para Slack creada [anteriormente](Jenkins.md#slack). 
  - En el campo _Default channel / member id_, indicar el valor del canal a utilizar como defecto (en este caso, `#deploy`)
  - Marcar la opción _Custom slack app bot user_
     - Elegir el emoji como icono para el bot (puede ser `:robot_face:`)
@@ -241,6 +241,6 @@ Luego, ir a la sección de _Extended E-mail Notification_ y configurar
 - SMTP server: `smtp.gmail.com`
 - SMTP port: `465`
 
-Después, ir a _Avanzado_ y en el campo de credenciales, elegir el id de la credencial de email configurada previamente. También, marcar la opción de _Use SSL_.
+Después, ir a _Avanzado_ y en el campo de credenciales, elegir el id de la credencial de email configurada [previamente](Jenkins.md#emails). También, marcar la opción de _Use SSL_.
 
 <img src="img/jenkins/email/extended.png" alt="drawing" width="500" style="display:block;margin:auto"/>  
