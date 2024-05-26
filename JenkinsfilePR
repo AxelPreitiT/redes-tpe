@@ -22,7 +22,7 @@ pipeline {
         stage('Build') {
             steps {
                 script {
-                    //jiraFunctions = load "jira.groovy"
+                    jiraFunctions = load "jira.groovy"
                     slackInit = slackSend(message: "Pipeline for Pull Request #$CHANGE_ID run. Review it on GitHub.")
                     slackInit.addReaction("stopwatch")
                     slackBuild = slackSend(channel: slackInit.threadId, message: "Build stage")
@@ -34,7 +34,7 @@ pipeline {
             post{
                 success{
                     script {
-                        //jiraFunctions.createJiraIssueWithComment(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Pull Request opened: #$CHANGE_ID", "https://github.com/AxelPreitiT/redes-tpe/pull/$CHANGE_ID", "Pull Request #$CHANGE_ID", "Build success")
+                        jiraFunctions.createJiraIssueAlone(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Pull Request opened: #$CHANGE_ID", "https://github.com/AxelPreitiT/redes-tpe/pull/$CHANGE_ID", "Pull Request #$CHANGE_ID", "Build success")
                         slackBuild.addReaction("white_check_mark")
                     }
                 }

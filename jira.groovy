@@ -36,4 +36,10 @@ def createJiraIssueWithComment(url, key, issueTypeName, creds, title, link, link
     jiraComment body: comment, issueKey: jiraKey
 }
 
+def createJiraIssueAlone(url, key, issueTypeName, creds, title, link, linkTitle, comment) {
+    def jiraResponse = sh(script: """curl -D- -u ${creds} -X POST --data '{ "fields": { "project": { "key": "${key}" }, "summary": "${title}", "issuetype": { "name": "${issueTypeName}" } } }' -H 'Content-Type: application/json' ${url}/rest/api/3/issue""", returnStdout: true).trim()
+}
+
+
+
 return this
