@@ -33,7 +33,7 @@ pipeline {
                 }
                 sh 'npm install'
                 sh 'npm run build'
-                stash includes:'*' name:'build'
+                stash includes:'*', name:'build'
             }
             post {
                 success {
@@ -94,7 +94,7 @@ pipeline {
                     sh 'cp -r .next/static .next/standalone/.next/static'
                     sh 'cp -r public .next/standalone/public'
                     sh 'zip deploy .next -qr'
-                    stash includes:'deploy' name:'zip'
+                    stash includes:'deploy', name:'zip'
                     withEnv(['RESOURCE_GROUP_NAME=redes-jenkins-development_group',
                             'WEB_APP_NAME=redes-jenkins-development']) {
                         developmentOutput = sh script: 'az webapp deploy --resource-group $RESOURCE_GROUP_NAME --name $WEB_APP_NAME --src-path deploy.zip --type zip --clean true 2>&1', returnStdout: true
