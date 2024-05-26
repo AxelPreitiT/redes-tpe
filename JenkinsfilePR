@@ -27,7 +27,7 @@ pipeline {
                     slackInit = slackSend(message: "Pipeline for Pull Request #$CHANGE_ID run. Review it on <$REPO_PR_URL$CHANGE_ID|GitHub>.")
                     slackInit.addReaction("stopwatch")
                     slackBuild = slackSend(channel: slackInit.threadId, message: "Build stage started")
-                    def jiraIssueDetails = jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Pull Request opened: #$CHANGE_ID", "https://github.com/AxelPreitiT/redes-tpe/pull/$CHANGE_ID", "Pull Request #$CHANGE_ID")
+                    def jiraIssueDetails = jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Pull Request opened: #$CHANGE_ID", "$REPO_PR_URL$CHANGE_ID", "Pull Request #$CHANGE_ID")
                     (jiraIssueId, jiraKey, jiraSelf) = [jiraIssueDetails.jiraIssueId, jiraIssueDetails.jiraKey, jiraIssueDetails.jiraSelf]
                 }
                 echo 'Building'
