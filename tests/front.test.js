@@ -10,7 +10,7 @@ test("new next app", async () => {
         await driver.get('http://localhost:3000');
 
         const title = await driver.getTitle();
-        expect(title).toBe('Create Next App');
+        expect(title).toBe('Jenkins demo');
     } catch (e) {
         console.log(e);
     } finally {
