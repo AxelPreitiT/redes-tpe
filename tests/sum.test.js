@@ -3,7 +3,7 @@ const sum = (a, b) => {
 }
 
 test("sum", () => {
-    expect(sum(1, 2)).toBe(4);
+    expect(sum(1, 2)).toBe(3);
 });
 
 test("fail", () => {
