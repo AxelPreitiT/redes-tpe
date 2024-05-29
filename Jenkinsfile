@@ -31,11 +31,9 @@ pipeline {
                     deployFunctions = load "deploy.groovy"
                     slackInit = slackSend(message: "Pipeline for ${env.JOB_name} <${env.BUILD_URL}|#${env.BUILD_NUMBER}> started")
                     slackInit.addReaction("stopwatch")
-                }
-                echo 'Building'
-                script {
                     buildResponse = slackSend (channel: slackInit.threadId, message: "Build stage started")
                 }
+                echo 'Building'
                 sh 'npm install'
                 sh 'npm run build'
             }
