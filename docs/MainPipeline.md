@@ -6,18 +6,38 @@ def testResponse
 def deployResponse
 def deployInput
 def developmentOutput
+def slackInit
+def deployResponse2
+def jiraFunctions
+def mailFunctions
+def deployFunctions
+
 pipeline {
     agent { 
         dockerfile {
             filename 'Dockerfile'
         }
     }
+    environment {
+        JIRA_URL = 'https://redesjenkins.atlassian.net'
+        JIRA_KEY = 'KAN'
+        JIRA_ISSUE_TYPE_NAME = 'JenkinsError'
+        JIRA_CRED = credentials('jira-token')
+        AZURE_CRED = credentials('azure-jose')
+    }
     stages {
         stage('Build') {
             steps {
+                script{
+                    jiraFunctions = load "jira.groovy"
+                    mailFunctions = load "mail.groovy"
+                    deployFunctions = load "deploy.groovy"
+                    slackInit = slackSend(message: "Pipeline for ${env.JOB_name} <${env.BUILD_URL}|#${env.BUILD_NUMBER}> started")
+                    slackInit.addReaction("stopwatch")
+                }
                 echo 'Building'
                 script {
-                    buildResponse = slackSend (message: "Build stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+                    buildResponse = slackSend (channel: slackInit.threadId, message: "Build stage started")
                 }
                 sh 'npm install'
                 sh 'npm run build'
@@ -30,7 +50,10 @@ pipeline {
                 }
                 failure {
                     script {
-                        buildResponse.addReaction("x")    
+                        buildResponse.addReaction("x")
+                        slackInit.removeReaction("stopwatch")
+                        slackInit.addReaction("x")
+                        jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Build failed: #'$BUILD_NUMBER'", env.BUILD_URL, "Jenkins build")
                     }
                 }
             }
@@ -40,7 +63,7 @@ pipeline {
                 echo 'Testing'
                 echo 'With webhook'
                 script{
-                    testResponse = slackSend (message: "Test stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+                    testResponse = slackSend (channel: slackInit.threadId, message: "Test stage started")
                 }
                 sh 'npm run dev > /dev/null 2>&1 & api_pid=$!'
                 sh 'npm run test'
@@ -48,31 +71,31 @@ pipeline {
             post {
                 success {
                     script {
-                        testResponse.addReaction("white_check_mark")       
+                        testResponse.addReaction("white_check_mark")
                     }
                 }
                 failure {
                     script {
-                        testResponse.addReaction("x")    
+                        testResponse.addReaction("x") 
+                        slackInit.removeReaction("stopwatch")
+                        slackInit.addReaction("x")
+                        jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Test failed: #'$BUILD_NUMBER'", env.BUILD_URL, "Jenkins build")
                     }
+                }
+                always{
+                    junit testResults: 'junit.xml'
                 }
             }
         }
-        stage('Deploy') {
+        stage('Dev deploy') {
             steps {
-                echo 'Deploying'
+                echo 'Deploying dev'
                 script {
-                    deployResponse = slackSend (message: "Deploy stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
-                    withCredentials([usernamePassword(credentialsId: 'azure-jose', passwordVariable: 'AZURE_CLIENT_SECRET', usernameVariable: 'AZURE_CLIENT_ID')]) {
-                            sh 'az login -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET > /dev/null'
-                    }
-                    sh 'npm run build'
-                    sh 'cp -r .next/static .next/standalone/.next/static'
-                    sh 'cp -r public .next/standalone/public'
-                    sh 'zip deploy .next -qr'
+                    deployResponse = slackSend (channel: slackInit.threadId, message: "Dev deploy stage started")
+                    deployResponse.addReaction("stopwatch")
                     withEnv(['RESOURCE_GROUP_NAME=redes-jenkins-development_group',
                             'WEB_APP_NAME=redes-jenkins-development']) {
-                        developmentOutput = sh script: 'az webapp deploy --resource-group $RESOURCE_GROUP_NAME --name $WEB_APP_NAME --src-path deploy.zip --type zip --clean true 2>&1', returnStdout: true
+                        developmentOutput = deployFunctions.deploy(RESOURCE_GROUP_NAME, WEB_APP_NAME, AZURE_CRED_USR, AZURE_CRED_PSW)    
                     }
                     echo "Command Output: ${developmentOutput}"
                     def urlLine = developmentOutput.readLines().find { it.contains("WARNING: You can visit your app at:") }
@@ -84,15 +107,48 @@ pipeline {
                         }
                     }
                     echo "Development URL: ${developmentUrl}"
-                    slackSend (message: "Please visit Jenkins to authorize the ${env.JOB_NAME} ${env.BUILD_NUMBER} deployment (<${env.BUILD_URL}input|Open>). The development build is now deployed <${developmentUrl}|here>.")
-                    emailext mimeType: 'text/html',
-                        subject: "[Jenkins]${currentBuild.fullDisplayName}",
-                        to: "jmentasti@itba.edu.ar",
-                        body: """<a href="${BUILD_URL}input">Click to review</a>. Test it on <a href="${developmentUrl}">the dev branch</a>."""
+                    slackSend (channel: slackInit.threadId, message: "Please visit Jenkins to authorize the ${env.JOB_NAME} <${env.BUILD_URL}input|#${env.BUILD_NUMBER}> production deployment. The development build is now deployed <${developmentUrl}|here>.")
+                    mailFunctions.sendEmail(developmentUrl, "${BUILD_URL}input", env.BUILD_NUMBER, "[Jenkins] Pipeline #${env.BUILD_NUMBER}") 
                     input id: 'Approve_deploy', message: "Are you sure you want to deploy the build?", ok: 'Deploy'
+                }
+            }
+            post {
+                success {
+                    script {
+                        deployResponse.addReaction("white_check_mark")     
+                    }
+                }
+                failure {
+                    script {
+                        slackInit.removeReaction("stopwatch")
+                        slackInit.addReaction("x")
+                        deployResponse.addReaction("x")
+                        jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Dev deploy failed: #'$BUILD_NUMBER'", env.BUILD_URL, "Jenkins build")
+                    }
+                }
+                aborted {
+                    script {
+                        slackInit.removeReaction("stopwatch")
+                        deployResponse.addReaction("no_entry")
+                        slackInit.addReaction("no_entry")      
+                    } 
+                }
+                always {
+                    script {
+                        deployResponse.removeReaction("stopwatch")
+                    }
+                }
+            }
+        }
+        stage('Prod deploy') {
+            steps {
+                echo 'Deploying prod'
+                script {
+                    deployResponse2 = slackSend (channel: slackInit.threadId, message: "Prod deploy stage started")
+                    deployResponse2.addReaction("stopwatch")
                     withEnv(['RESOURCE_GROUP_NAME=Jenkins-Deployment',
                             'WEB_APP_NAME=redes-jenkins-deploy']) {
-                        sh 'az webapp deploy --resource-group $RESOURCE_GROUP_NAME --name $WEB_APP_NAME --src-path deploy.zip --type zip --clean true'
+                        deployFunctions.deploy(RESOURCE_GROUP_NAME, WEB_APP_NAME, AZURE_CRED_USR, AZURE_CRED_PSW)
                     }
                     echo "Deployed"
                 }
@@ -100,18 +156,28 @@ pipeline {
             post {
                 success {
                     script {
-                        deployResponse.addReaction("white_check_mark")       
+                        slackInit.addReaction("white_check_mark")    
+                        deployResponse2.addReaction("white_check_mark")     
                     }
                 }
                 failure {
                     script {
-                        deployResponse.addReaction("x")    
+                        slackInit.addReaction("x")
+                        deployResponse2.addReaction("x")
+                        jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Prod deploy failed: #'$BUILD_NUMBER'", env.BUILD_URL, "Jenkins build")   
                     }
                 }
                 aborted {
                     script {
-                        deployResponse.addReaction("no_entry")    
+                        slackInit.addReaction("no_entry") 
+                        deployResponse2.addReaction("no_entry")     
                     } 
+                }
+                always {
+                    script {
+                        slackInit.removeReaction("stopwatch")
+                        deployResponse2.removeReaction("stopwatch")
+                    }
                 }
             }            
         }
@@ -121,7 +187,7 @@ pipeline {
 
 ## Agent
 
-Mediante la sección agent lo que se determina es el nodo/ambiente en el cual se va a correr el proceso Jenkins.
+Mediante la sección agent lo que se determina es el nodo/ambiente en el cual se va a correr el proceso Jenkins. En este caso, se determina que el Pipeline utilizará el contenedor Docker con las configuraciones en el archivo ``/Dockerfile``
 
 ```Groovy
 agent { 
@@ -131,21 +197,28 @@ agent {
 }
 ```
 
-De esta forma se determina que el Pipeline utilizará el contenedor Docker con las configuraciones en el archivo ``/Dockerfile``
-
 ## Stages
 
 La sección Stages engloba todos los Stage, o pasos, que se realizarán durante el Pipeline.
 
 ### Build 
 
+Durante este Step se buildea el proyecto, donde en primera medida se envía un mensaje al workspace en Slack dentro del hilo correspondiente, para luego efectivamente levantar el proyecto con los comandos __npm__.
+
+Finalmente en caso de ser un buid exitoso se reacciona el mensaje anterior con un emoji distintivo (✅) y mismo caso para errores en el build (❌) donde a su vez agrega un nuevo issue en Jira con el nombre: Build failed: #\<Numero de pipeline\> 
+
 ```Groovy
 stage('Build') {
     steps {
-        echo 'Building'
-        script {
-            buildResponse = slackSend (message: "Build stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+        script{
+            jiraFunctions = load "jira.groovy"
+            mailFunctions = load "mail.groovy"
+            deployFunctions = load "deploy.groovy"
+            slackInit = slackSend(message: "Pipeline for ${env.JOB_name} <${env.BUILD_URL}|#${env.BUILD_NUMBER}> started")
+            slackInit.addReaction("stopwatch")
+            buildResponse = slackSend (channel: slackInit.threadId  message: "Build stage started")
         }
+        echo 'Building'
         sh 'npm install'
         sh 'npm run build'
     }
@@ -157,19 +230,23 @@ stage('Build') {
         }
         failure {
             script {
-                buildResponse.addReaction("x")    
+                buildResponse.addReaction("x")
+                slackInit.removeReaction("stopwatch")
+                slackInit.addReaction("x")
+                jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Build failed: #'$BUILD_NUMBER'", env.BUILD_URL, "Jenkins build")
             }
         }
     }
-}
+}    
 ```
-
-Durante este Step se buildea el proyecto, donde en primera medida se envía un mensaje al workspace en Slack correspondiente con las variables de entorno asociadas, para luego efectivamente levantar el proyecto con los comandos __npm__.
-
-Finalmente en caso de ser un buid positivo se reacciona el mensaje anterior con un emoji distintivo (✅) y mismo caso para errores en el build (❌)
 
 
 ### Test
+
+Durante este Step se corren los test del proyecto, donde en primera medida se envía un mensaje al workspace en Slack dentro del hilo correspondiente, para luego efectivamente correr los test del proyecto con los comandos __npm__. Vale mencionar que para poder correr el servicio y los test, se genera un proceso en background y se guarda el PID asociado.
+
+Finalmente en caso de cumplir todos los test se reacciona el mensaje anterior con un emoji distintivo (✅) o  en caso de errores se reacciona con otro emoji (❌) y se crea un nuevo issue en Jira con el nombre Test failed: #\<Numero de pipeline\>
+
 
 ```Groovy
 stage('Test') {
@@ -177,7 +254,7 @@ stage('Test') {
         echo 'Testing'
         echo 'With webhook'
         script{
-            testResponse = slackSend (message: "Test stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
+            testResponse = slackSend (channel: slackInit.threadId, message: "Test stage started")
         }
         sh 'npm run dev > /dev/null 2>&1 & api_pid=$!'
         sh 'npm run test'
@@ -185,41 +262,42 @@ stage('Test') {
     post {
         success {
             script {
-                testResponse.addReaction("white_check_mark")       
+                testResponse.addReaction("white_check_mark")
             }
         }
         failure {
             script {
-                testResponse.addReaction("x")    
+                testResponse.addReaction("x") 
+                slackInit.removeReaction("stopwatch")
+                slackInit.addReaction("x")
+                jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Test failed: #'$BUILD_NUMBER'", env.BUILD_URL, "Jenkins build")
             }
+        }
+        always{
+            junit testResults: 'junit.xml'
         }
     }
 }
 ```
 
-Durante este Step se corren los test del proyecto, donde en primera medida se envía un mensaje al workspace en Slack correspondiente con las variables de entorno asociadas, para luego efectivamente correr los test del proyecto con los comandos __npm__. Vale mencionar que para poder correr el servicio y los test, se genera un proceso en background y se guarda el PID asociado.
+### Deploy Dev
 
-Finalmente en caso de cumplir todos los test se reacciona el mensaje anterior con un emoji distintivo (✅) o (❌) para errores.
+En este tercer Step se realiza el deploy a nivel de dessarrollo del proyecto. Para tales motivos se cuenta con una máquina virtual Azure con credenciales resguardadas en un archivo ``.env``
 
+En cuanto al proceso secuencial, se comienza por mandar un mensaje al workpace en Slack dentro del hilo correspondiente, para luego correr la función auxiliar __deployFunctions.deploy__ para autentificarse en la máquina virtual con las credenciales mencionadas y una vez autenticado, se buildea el proyecto. Finalmente, se detalla el URL con el cual uno puede acceder al servicio y se envía un mensaje de Slack al hilo correspondiente y un mail pidiendo aprobación para realizar el deploy a nivel de producción.
 
-### Deploy
+Finalmente al igual que todos los pasos anteriores, en función del estado general del deploy se reacciona al mensaje con un emoji distintivo, ✅ para casos de éxito, ❌ en caso de ocurrir algún error y 🚫 en caso de haber sido abortado. Asi como también se crea un nuevo issue en Jira  con el nombre "Dev deploy failed #\<Numero de pipeline\>" en caso de haber ocurrido algun error en el deploy.
 
 ```Groovy
-stage('Deploy') {
+stage('Dev deploy') {
     steps {
-        echo 'Deploying'
+        echo 'Deploying dev'
         script {
-            deployResponse = slackSend (message: "Deploy stage started for ${env.JOB_NAME} ${env.BUILD_NUMBER} (<${env.BUILD_URL}|Open>)")
-            withCredentials([usernamePassword(credentialsId: 'azure-jose', passwordVariable: 'AZURE_CLIENT_SECRET', usernameVariable: 'AZURE_CLIENT_ID')]) {
-                    sh 'az login -u $AZURE_CLIENT_ID -p $AZURE_CLIENT_SECRET > /dev/null'
-            }
-            sh 'npm run build'
-            sh 'cp -r .next/static .next/standalone/.next/static'
-            sh 'cp -r public .next/standalone/public'
-            sh 'zip deploy .next -qr'
+            deployResponse = slackSend (channel: slackInit.threadId, message: "Dev deploy stage started")
+            deployResponse.addReaction("stopwatch")
             withEnv(['RESOURCE_GROUP_NAME=redes-jenkins-development_group',
                     'WEB_APP_NAME=redes-jenkins-development']) {
-                developmentOutput = sh script: 'az webapp deploy --resource-group $RESOURCE_GROUP_NAME --name $WEB_APP_NAME --src-path deploy.zip --type zip --clean true 2>&1', returnStdout: true
+                developmentOutput = deployFunctions.deploy(RESOURCE_GROUP_NAME, WEB_APP_NAME, AZURE_CRED_USR, AZURE_CRED_PSW)    
             }
             echo "Command Output: ${developmentOutput}"
             def urlLine = developmentOutput.readLines().find { it.contains("WARNING: You can visit your app at:") }
@@ -231,15 +309,60 @@ stage('Deploy') {
                 }
             }
             echo "Development URL: ${developmentUrl}"
-            slackSend (message: "Please visit Jenkins to authorize the ${env.JOB_NAME} ${env.BUILD_NUMBER} deployment (<${env.BUILD_URL}input|Open>). The development build is now deployed <${developmentUrl}|here>.")
-            emailext mimeType: 'text/html',
-                subject: "[Jenkins]${currentBuild.fullDisplayName}",
-                to: "jmentasti@itba.edu.ar",
-                body: """<a href="${BUILD_URL}input">Click to review</a>. Test it on <a href="${developmentUrl}">the dev branch</a>."""
+            slackSend (channel: slackInit.threadId, message: "Please visit Jenkins to authorize the ${env.JOB_NAME} <${env.BUILD_URL}input|#${env.BUILD_NUMBER}> production deployment. The development build is now deployed <${developmentUrl}|here>.")
+            mailFunctions.sendEmail(developmentUrl, "${BUILD_URL}input", env.BUILD_NUMBER, "[Jenkins] Pipeline #${env.BUILD_NUMBER}") 
             input id: 'Approve_deploy', message: "Are you sure you want to deploy the build?", ok: 'Deploy'
+        }
+    }
+    post {
+        success {
+            script {
+                deployResponse.addReaction("white_check_mark")     
+            }
+        }
+        failure {
+            script {
+                slackInit.removeReaction("stopwatch")
+                slackInit.addReaction("x")
+                deployResponse.addReaction("x")
+                jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Dev deploy failed: #'$BUILD_NUMBER'", env.BUILD_URL, "Jenkins build")
+            }
+        }
+        aborted {
+            script {
+                slackInit.removeReaction("stopwatch")
+                deployResponse.addReaction("no_entry")
+                slackInit.addReaction("no_entry")      
+            } 
+        }
+        always {
+            script {
+                deployResponse.removeReaction("stopwatch")
+            }
+        }
+    }
+}
+```
+
+
+### Deploy Prod
+
+En este Step se realiza el deploy a nivel de producción del proyecto. Para tales motivos se cuenta con una máquina virtual Azure con credenciales resguardadas en un archivo ``.env``
+
+En cuanto al proceso secuencial, se comienza por mandar un mensaje al workpace en Slack dentro del hilo correspondiente, para luego correr la función auxiliar __deployFunctions.deploy__ para autentificarse en la máquina virtual con las credenciales mencionadas y una vez autenticado, se buildea el proyecto. Luego, se hace el deploy a producción. 
+
+Finalmente al igual que todos los pasos anteriores, en función del estado general del deploy se reacciona al mensaje con un emoji distintivo, ✅ para casos de éxito, ❌ en caso de ocurrir algún error y 🚫 en caso de haber sido abortado. Asi como también se crea un nuevo issue en Jira  con el nombre "Prod deploy failed #\<Numero de pipeline\>" en caso de haber ocurrido algun error en el deploy.
+
+```Groovy
+stage('Prod deploy') {
+    steps {
+        echo 'Deploying prod'
+        script {
+            deployResponse2 = slackSend (channel: slackInit.threadId, message: "Prod deploy stage started")
+            deployResponse2.addReaction("stopwatch")
             withEnv(['RESOURCE_GROUP_NAME=Jenkins-Deployment',
                     'WEB_APP_NAME=redes-jenkins-deploy']) {
-                sh 'az webapp deploy --resource-group $RESOURCE_GROUP_NAME --name $WEB_APP_NAME --src-path deploy.zip --type zip --clean true'
+                deployFunctions.deploy(RESOURCE_GROUP_NAME, WEB_APP_NAME, AZURE_CRED_USR, AZURE_CRED_PSW)
             }
             echo "Deployed"
         }
@@ -247,25 +370,29 @@ stage('Deploy') {
     post {
         success {
             script {
-                deployResponse.addReaction("white_check_mark")       
+                slackInit.addReaction("white_check_mark")    
+                deployResponse2.addReaction("white_check_mark")     
             }
         }
         failure {
             script {
-                deployResponse.addReaction("x")    
+                slackInit.addReaction("x")
+                deployResponse2.addReaction("x")
+                jiraFunctions.createJiraIssue(JIRA_URL, JIRA_KEY, JIRA_ISSUE_TYPE_NAME, JIRA_CRED, "Prod deploy failed: #'$BUILD_NUMBER'", env.BUILD_URL, "Jenkins build")   
             }
         }
         aborted {
             script {
-                deployResponse.addReaction("no_entry")    
+                slackInit.addReaction("no_entry") 
+                deployResponse2.addReaction("no_entry")     
             } 
+        }
+        always {
+            script {
+                slackInit.removeReaction("stopwatch")
+                deployResponse2.removeReaction("stopwatch")
+            }
         }
     }            
 }
 ```
-
-En este tercer Step se realiza el deploy del proyecto a un service público. Para tales motivos se cuenta con una máquina virtual Azure con credenciales resguardadas en un archivo ``.env``
-
-En cuanto al proceso secuencial, se comienza por mandar un mensaje al workpace en Slack como en los demás steps, para luego autentificarse en la máquina virtual con las credenciales mencionadas. Una vez autenticado, se buildea el proyecto y con el comando __az webapp deploy__  dentro de withEnv se realiza un deploy a nivel de development. Una vez realizado, se detalla el URL con el cual uno puede acceder al servicio y se envía un mensaje de Slack y un mail pidiendo aprobación para realizar el deploy a nivel de producción. En caso de ser aprobada, nuevamente con el comando __az webapp deploy__ dentro de withEnv se realiza el deploy a nivel de producción.
-
-Finalmente al igual que todos los pasos anteriores, en función del estado general del deploy se reacciona al mensaje inicial con un emoji distintivo, ✅ para casos de éxito, ❌ en caso de ocurrir algún error y 🚫 en caso de haber sido abortado.
