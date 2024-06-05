@@ -174,14 +174,23 @@ Para obtener un token en Slack, vamos a configurar un workspace nuevo para el eq
 1. Crear un workspace en Slack
 2. Hacer un canal #deploy (que se usará para mandar las novedades del pipeline)
 3. Generar token del bot
+   
     1. Ir a https://api.slack.com/apps
+   
     2. Tocar el botón _Create an App_
+   
     <img src="img/jenkins/slack/create_app.png" alt="drawing" width="350" style="display:block;margin:auto"/>
+    
     3. Elegir la opción _From an app manifest_
+       
     <img src="img/jenkins/slack/from_manifest.png" alt="drawing" width="350" style="display:block;margin:auto"/>
-    4. Elegir el workspace creado 
+    
+    4. Elegir el workspace creado
+       
     <img src="img/jenkins/slack/workspace.png" alt="drawing" width="350" style="display:block;margin:auto"/>
-        5. Eliminar el contenido del yaml creado, elegir el formato yaml y copiar el siguiente contenido
+    
+    5. Eliminar el contenido del yaml creado, elegir el formato yaml y copiar el siguiente contenido
+       
         ```yaml
         display_information:
           name: Jenkins
@@ -205,11 +214,17 @@ Para obtener un token en Slack, vamos a configurar un workspace nuevo para el eq
           socket_mode_enabled: false
           token_rotation_enabled: false
         ```
-    5. Clickear _Next_ > _Create_ > _Install app to workspace_ > _Allow_
+   
+    6. Clickear _Next_ > _Create_ > _Install app to workspace_ > _Allow_
+       
     <img src="img/jenkins/slack/install.png" alt="drawing" width="350" style="display:block;margin:auto"/> 
 
-       <img src="img/jenkins/slack/allow.png" alt="drawing" width="350" style="display:block;margin:auto"/>
-    6. En la página de la aplicación, ir a _OAuth & Permissions_ y obtener el token que se utilizará para las credenciales
+    <br>
+
+    <img src="img/jenkins/slack/allow.png" alt="drawing" width="350" style="display:block;margin:auto"/>
+     
+    7. En la página de la aplicación, ir a _OAuth & Permissions_ y obtener el token que se utilizará para las credenciales
+       
     <img src="img/jenkins/slack/token.png" alt="drawing" width="350" style="display:block;margin:auto"/>  
 
 
