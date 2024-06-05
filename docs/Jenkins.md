@@ -92,6 +92,7 @@ Además de los plugins comunes que se instalaron anteriormente, Jenkins ofrece u
 - [Slack Notification](https://plugins.jenkins.io/slack/)
 - [Docker Pipeline](https://plugins.jenkins.io/docker-workflow/)
 - [Jira](https://plugins.jenkins.io/jira/)
+- [Node](https://plugins.jenkins.io/nodejs/)
 
 
 Para instalarlos, vamos a Panel de Control > Administar Jenkins > Plugins y seleccionamos la opción de en  _Available plugins_ . También se puede navegar directamente a `<jenkins_url>/manage/pluginManager/available`
