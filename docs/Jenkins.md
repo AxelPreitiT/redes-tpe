@@ -3,7 +3,7 @@
 Para poder ejecutar un pipeline de Jenkins es necesario configurar un servidor Jenkins, donde se van a ejecutar los pasos del Jenkinsfile. 
 
 ## Instalación
-Se utilizará una VM con Ubuntu Server en la versión [22.04.4 LTS](https://releases.ubuntu.com/jammy/), y se recomienda una VM con al menos 2 vCUP y 4 GiB de RAM para correr los trabajos. Para poder tener una IP pública (necesario para utilizar webhooks para iniciar los pipelines), se utilizó el servicio de Azure VM's para crear las VM's necesarias (pudiendo cambiarse por otros servicios como AWS EC2). 
+Se utilizará una VM con Ubuntu Server en la versión [22.04.4 LTS](https://releases.ubuntu.com/jammy/), y se recomienda una VM con al menos 2 vCUP, 4 GiB de RAM y 32 Gb de almacenamiento para correr los trabajos. Para poder tener una IP pública (necesario para utilizar webhooks para iniciar los pipelines), se utilizó el servicio de Azure VM's para crear las VM's necesarias (pudiendo cambiarse por otros servicios como AWS EC2). 
 
 Una vez que se haya levantado la VM, se deben ejecutar los siguientes comandos para instalar Jenkins y Docker, que será utilizado para crear el ambiente de ejecución de los pipelines. 
 1. Instalar Java 
@@ -366,8 +366,8 @@ Luego, en la VM para el nodo:
     curl -sO <jenkins_url>/jnlpJars/agent.jar
     # curl -sO http://10.0.0.5:8080/jnlpJars/agent.jar
     java -jar agent.jar -url <jenkins_url> -secret 
-    # java -jar agent.jar -url http://10.0.0.5:8080/ -secret ... -name Node1 -workDir "/home/jenkins"
     <my_secret> -name Node1 -workDir "/home/jenkins"
+    # java -jar agent.jar -url http://10.0.0.5:8080/ -secret ... -name Node1 -workDir "/home/jenkins"
     exit 0
     ```
     Donde las líneas 3 y 5 son las obtenidas en el paso y de la configuración del controlador (pudiendo cambiar el host para usar IP's privadas)
