@@ -32,21 +32,27 @@ curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu focal stable"
 sudo apt install docker-ce
 ```
-4. Configurar para que Jenkins se inicie cuando se inicia la máquina
-```bash
-sudo systemctl enable jenkins
-```
-5. Iniciar Jenkins
-```bash
-sudo systemctl start jenkins
-```
-6. Configurar para que Docker inicie cuando se inicia la máquina
+4. Configurar para que Docker inicie cuando se inicia la máquina
 ```bash
 sudo systemctl enable docker
 ```
-7. Iniciar Docker
+5. Iniciar Docker
 ```bash
 sudo systemctl start docker
+```
+6. Darle permisos al usuario y a jenkins para usar docker
+```bash
+sudo usermod -aG docker jenkins
+sudo usermod -aG docker ${USER}
+sudo su - $USER
+```
+6. Configurar para que Jenkins se inicie cuando se inicia la máquina
+```bash
+sudo systemctl enable jenkins
+```
+7. Iniciar Jenkins
+```bash
+sudo systemctl start jenkins
 ```
 ## Configuración inicial
 Para la configuración de Jenkins, se utilizará la página web que provee el servidor en el puerto `8080` por default. Es necesario que desde la configuración de la VM se permitan conexiones a dicho puerto. Los pasos a ejecutar son:
@@ -55,7 +61,7 @@ Para la configuración de Jenkins, se utilizará la página web que provee el se
 
 Luego de la instalación, es necesario buscar una clave generada por Jenkins para verificar que el usuario de la página es el administrador. Dicha clave se encuentra en `/var/lib/jenkins/secrets/initialAdminPassword`, y para conocerla se ejecuta
 ```bash
-cat /var/lib/jenkins/secrets/initialAdminPassword
+sudo cat /var/lib/jenkins/secrets/initialAdminPassword
 ```
 Luego, se debe copiar la clave en la página
 
@@ -91,6 +97,7 @@ Además de los plugins comunes que se instalaron anteriormente, Jenkins ofrece u
 
 - [Slack Notification](https://plugins.jenkins.io/slack/)
 - [Docker Pipeline](https://plugins.jenkins.io/docker-workflow/)
+- [Docker](https://plugins.jenkins.io/docker-plugin/)
 - [Jira](https://plugins.jenkins.io/jira/)
 
 
@@ -128,12 +135,14 @@ Para los casos de Github, emails, Azure y Jira, se debe configurar una credencia
 
 <img src="img/jenkins/credentials_username_password.png" alt="drawing" width="500" style="display:block;margin:auto"/>
 
+> [!WARNING]
+> Para la credencial de Jira se debe elegir el id _jira-token_ y para azure se debe usar _azure-jose_ si se quiere utilizar el jenkinsfile provisto sin cambios.
 
 #### Github
 
 Para el acceso al repositorio, se puede configurar un _fine-grained token_ para limitar el acceso al repositorio que se quiere vincular al pipeline. Para mas información, consultar [este link](https://docs.github.com/en/authentication/keeping-your-account-and-data-secure/managing-your-personal-access-tokens#creating-a-fine-grained-personal-access-token).
 
-Los permisos que recomendamos darle al Token para el repositorio del proyecto son: (TODO revisar para bajarlos)
+Los permisos que recomendamos darle al Token para el repositorio del proyecto son: 
 - Actions: Read and Write
 - Code scanning alerts: Read and Write
 - Commit statuses: Read and Write
@@ -250,16 +259,23 @@ Después, ir a _Avanzado_ y en el campo de credenciales, elegir el id de la cred
 
 <img src="img/jenkins/email/extended.png" alt="drawing" width="500" style="display:block;margin:auto"/>  
 
+Para evitar especificar los destinatarios de los mails en el pipeline, se configura en la sección de _Default Recipients_
+
+<img src="img/jenkins/email/default_recipients.png" alt="drawing" width="700" style="display:block;margin:auto"/>  
+
+
 
 ### Jira
 
 En la sección de _Jira_
 
 1. Hacer click en el botón _Añadir_
-2. Agregar la URL del workspace en el campo _URL_
+2. Agregar la URL del workspace en el campo _URL_, como `https://redesjenkins.atlassian.net/`
 3. En _Credentials_, elegir las credenciales creadas [anteriormente](Jenkins.md#jira)
 
-Para poder crear Issues de tipo error en el workspace de Jira, ir a Jira > Tipos de Incidencias > Añadir tipo de incidencia > Crear tipo de incidencia > Nombre: `JenkinsError`
+<img src="img/jenkins/jira/configuration.png" alt="drawing" width="500" style="display:block;margin:auto"/>  
+
+Para poder crear Issues de tipo error en el workspace de Jira, ir a Configuración de proyecto > Tipos de Incidencias > Añadir tipo de incidencia > Crear tipo de incidencia > Nombre: `JenkinsError`. Adicionalmente, para el pipeline de los pull requests, se debe crear otra incidencia con el nombre `JenkinsPR`.
 
 ## Opcional: Configuración de Nodos
 

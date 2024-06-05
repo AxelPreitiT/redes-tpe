@@ -13,7 +13,7 @@ Luego, darle un nombre a la tarea (como `tpe`) y elegir la opción de _Pipeline_
 <img src="img/pipeline/pipeline_option.png" alt="drawing" width="500" style="display:block;margin:auto"/>
 
 Después, en la pantalla de configuración del pipeline:
-- Elegir la opción de _GitHub project_ 
+- Elegir la opción de _GitHub project_ y especificar la URL del repositorio, como `https://github.com/AxelPreitiT/redes-tpe.git/` 
 
 <img src="img/pipeline/github.png" alt="drawing" width="500" style="display:block;margin:auto"/>
 
