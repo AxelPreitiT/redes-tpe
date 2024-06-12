@@ -14,7 +14,7 @@ export default function Home() {
         <img src="/jenkins-logo.png" alt="Jenkins Logo" className={styles.logo} />
         <h1 className={styles.title}>Bienvenido a Jenkins</h1>
         <p className={styles.description}>
-          ¡En unos segundos comenzamos con la demostración!
+          ¡En unos segundos comenzamos con la demostración!!
         </p>
       </header>
 
