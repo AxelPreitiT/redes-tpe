@@ -12,7 +12,7 @@ export default function Home() {
 
       <header className={styles.header}>
         <img src="/jenkins-logo.png" alt="Jenkins Logo" className={styles.logo} />
-        <h1 className={styles.title}>Bienvenido Ivan y Kevin</h1>
+        <h1 className={styles.title}>Hasta luego Ivan y Kevin</h1>
         <p className={styles.description}>
           ¡En unos segundos comenzamos con la demostración!
         </p>
